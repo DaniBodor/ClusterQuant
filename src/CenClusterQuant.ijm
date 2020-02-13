@@ -41,10 +41,12 @@ function makeGrid(gridsize) {
 	W_offset = (getWidth()  % gridsize) / 2;
 	for (i = W_offset; i < getWidth()-W_offset; i+=gridsize) {
 		for (j = H_offset; j < getHeight()-H_offset; j+=gridsize) {
-			makeRectangle(j, i, gridsize, gridsize);
+			makeRectangle(i, j, gridsize, gridsize);
 			roiManager("add");
 		}
 	}
+	run("Select None");
+	
 	roiManager("Remove Channel Info");
 	roiManager("Remove Slice Info");
 	roiManager("Remove Frame Info");

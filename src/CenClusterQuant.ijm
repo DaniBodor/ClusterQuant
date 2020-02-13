@@ -92,14 +92,14 @@ function makeDNAMask(DNA){
 
 
 function makeGrid(gridsize,KTch) {
-	// make reference image of cell outline
+	// make cell mask image
 	selectImage(workingImage);
 	newImage("newMask", "8-bit", getWidth, getHeight,1);
 	mask = getTitle();
 	roiManager("select", 0);
 	run("Invert");
 
-	// make grid around DNA
+	// make grid around mask
 	W_offset = (getWidth()  % gridsize) / 2;
 	H_offset = (getHeight() % gridsize) / 2;
 	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
@@ -110,7 +110,7 @@ function makeGrid(gridsize,KTch) {
 		}
 	}
 
-	// clean up
+	// clean up clutter
 	close(mask);
 	
 	selectImage(workingImage);
@@ -125,7 +125,6 @@ function makeGrid(gridsize,KTch) {
 	setSlice(KTch);
 	run("Find Maxima...", "prominence=150 strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
-
 }
 
 

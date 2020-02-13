@@ -3,7 +3,7 @@ cropEdges = 0;	// 1/0 == Yes/No
 cropsize = 16;
 
 // Set parameters
-gridsize = 16;
+gridsize = 20;
 ThreshType = "Huang";	//"RenyiEntropy";
 Gauss_sigma = 40;
 
@@ -26,11 +26,14 @@ selectWindow("ori");
 ori = getTitle();
 run("Select None");
 run("Brightness/Contrast...");
+
 close("\\Others");
+roiManager("reset");
 
 Stack.getDimensions(width, height, channels, slices, frames);
 run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
-roiManager("reset");
+run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
+
 
 selectImage(ori);
 run("Duplicate...", "duplicate");
@@ -38,14 +41,17 @@ workingImage = getTitle();
 
 
 
+
+
 // Call sequential functions
 makeDNAMask(DNAchannel);
-makeGrid(gridsize,KTchannel);
+makeGrid(gridsize);
+MeasureClustering(KTchannel,MTchannel);
 
 //makeSlidingWindow();	// update from makeGrid
-//makeMeasurements
 
-run("Tile");
+
+waitForUser("All done");
 
 function makeDNAMask(DNA){
 	// prep images
@@ -68,10 +74,10 @@ function makeDNAMask(DNA){
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
 	run("Erode");
-	for (i = 0; i < 25; i++) 	run("Dilate");
+	for (i = 0; i < (gridsize*1.5); i++) 	run("Dilate");
 
 	// find main cell in mask
-	run("Analyze Particles...", "display exclude clear include add");
+	run("Analyze Particles...", "display clear include add");
 	
 	while ( roiManager("count") > 1){
 		roiManager("select", 0);
@@ -91,7 +97,7 @@ function makeDNAMask(DNA){
 }
 
 
-function makeGrid(gridsize,KTch) {
+function makeGrid(gridsize) {
 	// make cell mask image
 	selectImage(workingImage);
 	newImage("newMask", "8-bit", getWidth, getHeight,1);
@@ -120,14 +126,31 @@ function makeGrid(gridsize,KTch) {
 	roiManager("Remove Channel Info");
 	roiManager("Show All without labels");
 
+}
 
+function MeasureClustering(KTch,MTch){
 	// find kinetochores
+	selectImage(workingImage);
 	setSlice(KTch);
 	run("Find Maxima...", "prominence=150 strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
+	spots = getTitle();
+	run("Divide...", "value=255");
+	setMinAndMax(0, 1);
+
+	CENs = newArray(roiManager("count"));
+	for (roi = 0; roi < roiManager("count"); roi++) {
+		roiManager("select",roi);
+		run("Measure");
+		CENs[roi] = getResult("IntDen");
+	}
+
+	// plot histo of centromere numbers in grid
+
+	Plot.create("CEN histogram", "Number of centromeres", "count")
+	Plot.addHistogram(CENs, 1, 0);
+	Plot.show();
 }
-
-
 
 
 

@@ -20,26 +20,37 @@ if (cropEdges){
 	run("Crop");
 }
 
+
 // Initialize macro
+selectWindow("ori");
 ori = getTitle();
+run("Select None");
+run("Brightness/Contrast...");
+close("\\Others");
+
 Stack.getDimensions(width, height, channels, slices, frames);
 run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
 roiManager("reset");
 
+selectImage(ori);
+run("Duplicate...", "duplicate");
+workingImage = getTitle();
+
+
 
 // Call sequential functions
-workingImage = makeDNAMask(DNAchannel);
-makeGrid(gridsize, workingImage);
-//makeSlidingWindow();
+makeDNAMask(DNAchannel);
+makeGrid(gridsize);
+findKinetochores(KTchannel);
 
-//findKinetochores(KTchannel);
+//makeSlidingWindow();	// update from makeGrid
 //makeMeasurements
 
-roiManager("Show All without labels");
+
 
 function makeDNAMask(DNA){
 	// prep images
-	selectImage(ori);
+	selectImage(workingImage);
 	setSlice (DNA);
 	run("Duplicate...", "duplicate channels=" + DNA);
 	run("Grays");
@@ -58,7 +69,7 @@ function makeDNAMask(DNA){
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
 	run("Erode");
-	for (i = 0; i < 15; i++) 	run("Dilate");
+	for (i = 0; i < 25; i++) 	run("Dilate");
 
 	// find main cell in mask
 	run("Analyze Particles...", "display exclude clear include add");
@@ -72,24 +83,25 @@ function makeDNAMask(DNA){
 		roiManager("delete");
 	}
 
-	selectImage(ori);
-	run("Duplicate...", "duplicate");
-	cellcrop = getTitle();
+	selectImage(workingImage);
 	roiManager("select", 0);
 	run("Crop");
 	
 	//roiManager("reset");
 	close(mask);
-
-	return cellcrop;
 }
 
 
-function makeGrid(gridsize,IM) {
-	// would be nice to only make a grid within DNA area (given by ROI 0)
-	selectImage(IM);
-	H_offset = (getHeight() % gridsize) / 2;
+function makeGrid(gridsize) {
+	// make reference image of cell outline
+	selectImage(workingImage);
+	newImage("ref", "8-bit", getWidth, getHeight,1);
+	roiManager("select", 0);
+	run("Invert");
+
+	//
 	W_offset = (getWidth()  % gridsize) / 2;
+	H_offset = (getHeight() % gridsize) / 2;
 	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
 		for (y = H_offset; y < getHeight()-H_offset; y+=gridsize) {
 			makeRectangle(x, y, gridsize, gridsize);
@@ -97,18 +109,19 @@ function makeGrid(gridsize,IM) {
 		}
 	}
 	run("Select None");
-	
 	roiManager("Remove Channel Info");
-	roiManager("Remove Slice Info");
-	roiManager("Remove Frame Info");
+
+	roiManager("Show All without labels");
 }
 
 function findKinetochores(KT){
-	selectImage(ori);
+	selectImage(workingImage);
 	setSlice(KT);
 	
 
 	run("Find Maxima...", "prominence=150 strict exclude output=[Single Points]");
+	roiManager("Show All without labels");
+
 }
 
 

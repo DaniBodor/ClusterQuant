@@ -30,7 +30,7 @@ roiManager("reset");
 // Call sequential functions
 makeGrid(gridsize);
 //makeSlidingWindow();
-//makeDNAMask(DNAchannel);
+makeDNAMask(DNAchannel);
 //findKinetochores(KTchannel);
 //makeMeasurements
 
@@ -58,7 +58,7 @@ function makeDNAMask(DNA){
 	setSlice (DNA);
 	run("Duplicate...", "duplicate channels=" + DNA);
 	run("Grays");
-	getTitle() = mask;
+	mask = getTitle();
 
 
 /*	// de-blur
@@ -72,8 +72,6 @@ function makeDNAMask(DNA){
 	// make mask
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
-	
-	// dilate
 	run("Erode");
 	for (i = 0; i < 9; i++) 	run("Dilate");	
 }

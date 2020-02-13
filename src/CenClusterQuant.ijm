@@ -1,43 +1,46 @@
-cropEdges = 0;
+// Set deconvolution edges cropping
+cropEdges = 0;	// 1/0 == Yes/No
 cropsize = 16;
-gridsize = 16;
 
+// Set parameters
+gridsize = 16;
+ThreshType = "Huang";	//"RenyiEntropy";
+Gauss_sigma = 40;
+
+// Set channel order
 DNAchannel = 1;
 COROchannel = 2;
 MTchannel = 3;
 KTchannel = 4;
 
-ThreshType = "Huang";	//"RenyiEntropy";
-Gauss_sigma = 40;
 
+// Crop off deconvolution edges
+if (cropEdges){
+	makeRectangle(cropsize, cropsize, getWidth-cropsize*2, getHeight-cropsize*2);
+	run("Crop");
+}
 
-makeRectangle(cropsize, cropsize, getWidth-cropsize*2, getHeight-cropsize*2);
-if (cropEdges)	run("Crop");
-
-
+// Initialize macro
+ori = getTitle();
 roiManager("reset");
-MAIN = getTitle();
 
+
+// Call sequential functions
 makeGrid(gridsize);
-makeSlidingWindow();
-makeDNAMask(DNAchannel);
-findKinetochores(KTchannel);
-makeMeasurements
+//makeSlidingWindow();
+//makeDNAMask(DNAchannel);
+//findKinetochores(KTchannel);
+//makeMeasurements
 
 
 function makeGrid(gridsize) {
-	selectImage(MAIN);
+	selectImage(ori);
 	H0 = (getHeight() % gridsize) / 2;
 	W0 = (getWidth()  % gridsize) / 2;
 	for (i = W0; i < getWidth()-W0; i+=gridsize) {
 		for (j = H0; j < getHeight()-H0; j+=gridsize) {
 			makeRectangle(j, i, gridsize, gridsize);
 			roiManager("add");
-/*			for (k = 1; k <= nSlices; k++) {
-				setSlice(k);
-				run("Measure");
-			}
-*/
 		}
 	}
 	roiManager("Remove Channel Info");
@@ -47,7 +50,7 @@ function makeGrid(gridsize) {
 
 function makeDNAMask(DNA){
 	// prep images
-	selectImage(MAIN);
+	selectImage(ori);
 	setSlice (DNA);
 	run("Duplicate...", "duplicate channels=" + DNA);
 	run("Grays");
@@ -73,7 +76,7 @@ function makeDNAMask(DNA){
 
 
 function findKinetochores(KT){
-	selectImage(MAIN);
+	selectImage(ori);
 	setSlice(KT);
 	
 

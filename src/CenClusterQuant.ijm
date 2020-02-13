@@ -40,13 +40,12 @@ workingImage = getTitle();
 
 // Call sequential functions
 makeDNAMask(DNAchannel);
-makeGrid(gridsize);
-findKinetochores(KTchannel);
+makeGrid(gridsize,KTchannel);
 
 //makeSlidingWindow();	// update from makeGrid
 //makeMeasurements
 
-
+run("Tile");
 
 function makeDNAMask(DNA){
 	// prep images
@@ -92,7 +91,7 @@ function makeDNAMask(DNA){
 }
 
 
-function makeGrid(gridsize) {
+function makeGrid(gridsize,KTch) {
 	// make reference image of cell outline
 	selectImage(workingImage);
 	newImage("newMask", "8-bit", getWidth, getHeight,1);
@@ -110,17 +109,20 @@ function makeGrid(gridsize) {
 			if (mean == 0)		roiManager("add");
 		}
 	}
-	run("Select None");
-	roiManager("Remove Channel Info");
 
-	roiManager("Show All without labels");
+	// clean up
 	close(mask);
-}
-
-function findKinetochores(KT){
+	
 	selectImage(workingImage);
-	setSlice(KT);
+	run("Select None");
+	roiManager("select",0);
+	roiManager("delete");
+	roiManager("Remove Channel Info");
+	roiManager("Show All without labels");
 
+
+	// find kinetochores
+	setSlice(KTch);
 	run("Find Maxima...", "prominence=150 strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
 

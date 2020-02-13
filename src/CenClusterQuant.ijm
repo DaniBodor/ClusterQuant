@@ -22,6 +22,8 @@ if (cropEdges){
 
 // Initialize macro
 ori = getTitle();
+Stack.getDimensions(width, height, channels, slices, frames);
+run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
 roiManager("reset");
 
 
@@ -35,10 +37,10 @@ makeGrid(gridsize);
 
 function makeGrid(gridsize) {
 	selectImage(ori);
-	H0 = (getHeight() % gridsize) / 2;
-	W0 = (getWidth()  % gridsize) / 2;
-	for (i = W0; i < getWidth()-W0; i+=gridsize) {
-		for (j = H0; j < getHeight()-H0; j+=gridsize) {
+	H_offset = (getHeight() % gridsize) / 2;
+	W_offset = (getWidth()  % gridsize) / 2;
+	for (i = W_offset; i < getWidth()-W_offset; i+=gridsize) {
+		for (j = H_offset; j < getHeight()-H_offset; j+=gridsize) {
 			makeRectangle(j, i, gridsize, gridsize);
 			roiManager("add");
 		}

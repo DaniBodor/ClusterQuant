@@ -28,29 +28,14 @@ roiManager("reset");
 
 
 // Call sequential functions
-makeGrid(gridsize);
+workingImage = makeDNAMask(DNAchannel);
+makeGrid(gridsize, workingImage);
 //makeSlidingWindow();
-makeDNAMask(DNAchannel);
+
 //findKinetochores(KTchannel);
 //makeMeasurements
 
-
-function makeGrid(gridsize) {
-	selectImage(ori);
-	H_offset = (getHeight() % gridsize) / 2;
-	W_offset = (getWidth()  % gridsize) / 2;
-	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=gridsize) {
-			makeRectangle(x, y, gridsize, gridsize);
-			roiManager("add");
-		}
-	}
-	run("Select None");
-	
-	roiManager("Remove Channel Info");
-	roiManager("Remove Slice Info");
-	roiManager("Remove Frame Info");
-}
+roiManager("Show All without labels");
 
 function makeDNAMask(DNA){
 	// prep images
@@ -73,9 +58,50 @@ function makeDNAMask(DNA){
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
 	run("Erode");
-	for (i = 0; i < 9; i++) 	run("Dilate");	
+	for (i = 0; i < 15; i++) 	run("Dilate");
+
+	// find main cell in mask
+	run("Analyze Particles...", "display exclude clear include add");
+	
+	while ( roiManager("count") > 1){
+		roiManager("select", 0);
+		getStatistics(area_0);
+		roiManager("select", 1);
+		getStatistics(area_1);
+		if (area_0 < area_1)	roiManager("select", 0);
+		roiManager("delete");
+	}
+
+	selectImage(ori);
+	run("Duplicate...", "duplicate");
+	cellcrop = getTitle();
+	roiManager("select", 0);
+	run("Crop");
+	
+	//roiManager("reset");
+	close(mask);
+
+	return cellcrop;
 }
 
+
+function makeGrid(gridsize,IM) {
+	// would be nice to only make a grid within DNA area (given by ROI 0)
+	selectImage(IM);
+	H_offset = (getHeight() % gridsize) / 2;
+	W_offset = (getWidth()  % gridsize) / 2;
+	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
+		for (y = H_offset; y < getHeight()-H_offset; y+=gridsize) {
+			makeRectangle(x, y, gridsize, gridsize);
+			roiManager("add");
+		}
+	}
+	run("Select None");
+	
+	roiManager("Remove Channel Info");
+	roiManager("Remove Slice Info");
+	roiManager("Remove Frame Info");
+}
 
 function findKinetochores(KT){
 	selectImage(ori);

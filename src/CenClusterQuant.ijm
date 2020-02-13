@@ -39,9 +39,9 @@ function makeGrid(gridsize) {
 	selectImage(ori);
 	H_offset = (getHeight() % gridsize) / 2;
 	W_offset = (getWidth()  % gridsize) / 2;
-	for (i = W_offset; i < getWidth()-W_offset; i+=gridsize) {
-		for (j = H_offset; j < getHeight()-H_offset; j+=gridsize) {
-			makeRectangle(i, j, gridsize, gridsize);
+	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
+		for (y = H_offset; y < getHeight()-H_offset; y+=gridsize) {
+			makeRectangle(x, y, gridsize, gridsize);
 			roiManager("add");
 		}
 	}

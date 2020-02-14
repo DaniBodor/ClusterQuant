@@ -4,6 +4,8 @@ Version 0.1.0
 
 Measure degree of clustering of individual centromere spots from microscopy data
 
+Used Barbara Vreede's 'good-enough-project' cookiecutter setup for project organization (cookiecutter gh:bvreede/good-enough-project)
+
 
 ## Project organization
 

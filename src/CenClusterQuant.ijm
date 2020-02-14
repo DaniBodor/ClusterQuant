@@ -3,7 +3,7 @@ cropEdges = 0;	// 1/0 == Yes/No
 cropsize = 16;
 
 // Set parameters
-gridsize = 20;
+gridsize = 16;
 ThreshType = "Huang";	//"RenyiEntropy";
 Gauss_sigma = 40;
 
@@ -14,16 +14,12 @@ MTchannel = 3;
 KTchannel = 4;
 
 
-// Crop off deconvolution edges
-if (cropEdges){
-	makeRectangle(cropsize, cropsize, getWidth-cropsize*2, getHeight-cropsize*2);
-	run("Crop");
-}
 
 
-// Initialize macro
-selectWindow("ori");
-ori = getTitle();
+
+// Initialize macro for test environments
+selectImage(1);
+
 run("Select None");
 run("Brightness/Contrast...");
 
@@ -35,10 +31,18 @@ run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" +
 run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
 
 
+
+
+// Crop off deconvolution edges
+ori = getTitle();
 selectImage(ori);
+
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
-
+if (cropEdges){
+	makeRectangle(cropsize, cropsize, getWidth-cropsize*2, getHeight-cropsize*2);
+	run("Crop");
+}
 
 
 
@@ -46,12 +50,19 @@ workingImage = getTitle();
 // Call sequential functions
 makeDNAMask(DNAchannel);
 makeGrid(gridsize);
-MeasureClustering(KTchannel,MTchannel);
+clusterList = MeasureClustering(KTchannel,MTchannel);
+
+// plot histo of centromere numbers in grid
+Plot.create("CEN histogram", "Number of centromeres", "count")
+Plot.addHistogram(clusterList, 1);
+Plot.show();
+Array.print(clusterList);
+
 
 //makeSlidingWindow();	// update from makeGrid
 
 
-waitForUser("All done");
+//waitForUser("All done");
 
 function makeDNAMask(DNA){
 	// prep images
@@ -75,6 +86,7 @@ function makeDNAMask(DNA){
 	run("Convert to Mask");
 	run("Erode");
 	for (i = 0; i < (gridsize*1.5); i++) 	run("Dilate");
+//	for (i = 0; i < 24; i++) 	run("Dilate");
 
 	// find main cell in mask
 	run("Analyze Particles...", "display clear include add");
@@ -144,12 +156,9 @@ function MeasureClustering(KTch,MTch){
 		run("Measure");
 		CENs[roi] = getResult("IntDen");
 	}
-
-	// plot histo of centromere numbers in grid
-
-	Plot.create("CEN histogram", "Number of centromeres", "count")
-	Plot.addHistogram(CENs, 1, 0);
-	Plot.show();
+	run("Select None");
+	
+	return CENs;
 }
 
 

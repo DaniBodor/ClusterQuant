@@ -1,5 +1,5 @@
 // Set deconvolution edges cropping
-cropEdges = 0;	// 1/0 == Yes/No
+cropEdges = 1;	// 1/0 == Yes/No
 cropsize = 16;
 
 // Set parameters
@@ -14,9 +14,7 @@ MTchannel = 3;
 KTchannel = 4;
 
 
-
-
-
+/*
 // Initialize macro for test environments
 selectImage(1);
 
@@ -29,13 +27,15 @@ roiManager("reset");
 Stack.getDimensions(width, height, channels, slices, frames);
 run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
 run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
-
+*/
 
 
 
 // Crop off deconvolution edges
 ori = getTitle();
-selectImage(ori);
+Stack.getDimensions(width, height, channels, slices, frames);
+run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
+run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
 
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
@@ -53,10 +53,11 @@ makeGrid(gridsize);
 clusterList = MeasureClustering(KTchannel,MTchannel);
 
 // plot histo of centromere numbers in grid
-Plot.create("CEN histogram", "Number of centromeres", "count")
+/*Plot.create("CEN histogram", "Number of centromeres", "count")
 Plot.addHistogram(clusterList, 1);
 Plot.show();
-Array.print(clusterList);
+*/
+Array.print(ori,clusterList);
 
 
 //makeSlidingWindow();	// update from makeGrid
@@ -85,7 +86,7 @@ function makeDNAMask(DNA){
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
 	run("Erode");
-	for (i = 0; i < (gridsize*1.5); i++) 	run("Dilate");
+	for (i = 0; i < (gridsize); i++) 	run("Dilate");
 //	for (i = 0; i < 24; i++) 	run("Dilate");
 
 	// find main cell in mask

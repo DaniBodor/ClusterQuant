@@ -6,7 +6,12 @@ cropsize = 16;
 gridsize = 16;
 ThreshType = "Huang";	//"RenyiEntropy";
 Gauss_sigma = 40;
-RollWindow_displacement = 1;		// 0 = non-overlapping grid, >0 gives displacement value of for rolling window 
+
+// WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
+// WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes super long, 2 is fine)
+// WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
+WindowDisplacement = 8;
+	
 
 // Set channel order
 DNAchannel = 1;
@@ -18,6 +23,7 @@ KTchannel = 4;
 
 // Initialize macro for test environments
 // can be commented out/deleted for final version, but doesn't interfere
+start = getTime();
 selectImage(1);
 ori = getTitle();
 
@@ -48,8 +54,11 @@ makeDNAMask(DNAchannel);
 makeGrid(gridsize);
 clusterList = MeasureClustering(KTchannel,MTchannel);
 
-Array.print(ori,clusterList);
 
+finish = getTime();
+duration = round((finish-start)/1000);
+//Array.print(ori,clusterList);
+print(WindowDisplacement,duration,"sec",roiManager("count"));
 
 //makeSlidingWindow();	// update from makeGrid
 
@@ -110,13 +119,17 @@ function makeGrid(gridsize) {
 	run("Invert");
 
 	// make grid around mask
-	if (RollWindow_displacement == 0)		RollWindow_displacement = gridsize;
-	W_offset = (getWidth()  % RollWindow_displacement) / 2;
-	H_offset = (getHeight() % RollWindow_displacement) / 2;
+	if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
+	else if (WindowDisplacement < 0){
+		division = abs(WindowDisplacement);
+		WindowDisplacement = (gridsize/division);
+	}
+	W_offset = (getWidth()  % WindowDisplacement) / 2;
+	H_offset = (getHeight() % WindowDisplacement) / 2;
 		
 	
-	for (x = W_offset; x < getWidth()-W_offset; x+=RollWindow_displacement) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=RollWindow_displacement) {
+	for (x = W_offset; x < getWidth()-W_offset; x+=WindowDisplacement) {
+		for (y = H_offset; y < getHeight()-H_offset; y+=WindowDisplacement) {
 			makeRectangle(x, y, gridsize, gridsize);
 			getStatistics(area, mean);
 			if (mean == 0 && area == gridsize*gridsize)		roiManager("add");

@@ -6,6 +6,7 @@ cropsize = 16;
 gridsize = 16;
 ThreshType = "Huang";	//"RenyiEntropy";
 Gauss_sigma = 40;
+RollWindow_displacement = 1;		// 0 = non-overlapping grid, >0 gives displacement value of for rolling window 
 
 // Set channel order
 DNAchannel = 1;
@@ -14,9 +15,11 @@ MTchannel = 3;
 KTchannel = 4;
 
 
-/*
+
 // Initialize macro for test environments
+// can be commented out/deleted for final version, but doesn't interfere
 selectImage(1);
+ori = getTitle();
 
 run("Select None");
 run("Brightness/Contrast...");
@@ -26,16 +29,11 @@ roiManager("reset");
 
 Stack.getDimensions(width, height, channels, slices, frames);
 run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
-run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
-*/
 
 
 
 // Crop off deconvolution edges
-ori = getTitle();
-Stack.getDimensions(width, height, channels, slices, frames);
-run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
-run("Set Measurements...", "area mean min center feret's integrated redirect=None decimal=3");
+
 
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
@@ -45,18 +43,11 @@ if (cropEdges){
 }
 
 
-
-
 // Call sequential functions
 makeDNAMask(DNAchannel);
 makeGrid(gridsize);
 clusterList = MeasureClustering(KTchannel,MTchannel);
 
-// plot histo of centromere numbers in grid
-/*Plot.create("CEN histogram", "Number of centromeres", "count")
-Plot.addHistogram(clusterList, 1);
-Plot.show();
-*/
 Array.print(ori,clusterList);
 
 
@@ -119,13 +110,16 @@ function makeGrid(gridsize) {
 	run("Invert");
 
 	// make grid around mask
-	W_offset = (getWidth()  % gridsize) / 2;
-	H_offset = (getHeight() % gridsize) / 2;
-	for (x = W_offset; x < getWidth()-W_offset; x+=gridsize) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=gridsize) {
+	if (RollWindow_displacement == 0)		RollWindow_displacement = gridsize;
+	W_offset = (getWidth()  % RollWindow_displacement) / 2;
+	H_offset = (getHeight() % RollWindow_displacement) / 2;
+		
+	
+	for (x = W_offset; x < getWidth()-W_offset; x+=RollWindow_displacement) {
+		for (y = H_offset; y < getHeight()-H_offset; y+=RollWindow_displacement) {
 			makeRectangle(x, y, gridsize, gridsize);
 			getStatistics(area, mean);
-			if (mean == 0)		roiManager("add");
+			if (mean == 0 && area == gridsize*gridsize)		roiManager("add");
 		}
 	}
 
@@ -154,8 +148,7 @@ function MeasureClustering(KTch,MTch){
 	CENs = newArray(roiManager("count"));
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
-		run("Measure");
-		CENs[roi] = getResult("IntDen");
+		CENs[roi] = getValue("IntDen");
 	}
 	run("Select None");
 	

@@ -73,6 +73,8 @@ duration = round((finish-start)/1000);
 Array.print(ori,clusterList);
 Array.print(ori,MTintensity);
 
+selectWindow("Log");
+saveAs("Text", "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/Log_17Feb.txt");
 
 
 //print(WindowDisplacement,duration,"sec",roiManager("count"));

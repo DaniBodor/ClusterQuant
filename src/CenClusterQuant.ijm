@@ -1,17 +1,25 @@
 // Set deconvolution edges cropping
-cropEdges = 1;	// 1/0 == Yes/No
-cropsize = 16;
+CropEdges = 1;	// 1/0 == Yes/No
+CropSize = 16;
 
 // Set parameters
 gridsize = 16;
+WindowDisplacement = 2;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
-Gauss_sigma = 40;
+GaussSigma = 40;
+DilateCycles = WindowDisplacement;
 
+
+// update WindowDisplacement as per rules above
 // WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
 // WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes super long, 2 is fine)
 // WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
-WindowDisplacement = 8;
-	
+if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
+else if (WindowDisplacement < 0){
+	division = abs(WindowDisplacement);
+	WindowDisplacement = (gridsize/division);
+}
+
 
 // Set channel order
 DNAchannel = 1;
@@ -43,8 +51,8 @@ run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" +
 
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
-if (cropEdges){
-	makeRectangle(cropsize, cropsize, getWidth-cropsize*2, getHeight-cropsize*2);
+if (CropEdges){
+	makeRectangle(CropSize, CropSize, getWidth-CropSize*2, getHeight-CropSize*2);
 	run("Crop");
 }
 
@@ -52,15 +60,17 @@ if (cropEdges){
 // Call sequential functions
 makeDNAMask(DNAchannel);
 makeGrid(gridsize);
-clusterList = MeasureClustering(KTchannel,MTchannel);
+resultArray = MeasureClustering(KTchannel,MTchannel);
 
+
+clusterList = Array.slice(resultArray,0,resultArray.length/2);
+MTintensity = Array.slice(resultArray,resultArray.length/2,resultArray.length);
 
 finish = getTime();
 duration = round((finish-start)/1000);
-//Array.print(ori,clusterList);
-print(WindowDisplacement,duration,"sec",roiManager("count"));
+Array.print(ori,resultArray);
+//print(WindowDisplacement,duration,"sec",roiManager("count"));
 
-//makeSlidingWindow();	// update from makeGrid
 
 
 //waitForUser("All done");
@@ -77,7 +87,7 @@ function makeDNAMask(DNA){
 /*	// de-blur
 	run("Duplicate..."," ");
 	getTitle() = blur;
-	run("Gaussian Blur...", "sigma=" + Gauss_sigma);
+	run("Gaussian Blur...", "sigma=" + GaussSigma);
 	imageCalculator("Subtract", mask,blur);
 	close(blur);
 */
@@ -86,8 +96,7 @@ function makeDNAMask(DNA){
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
 	run("Erode");
-	for (i = 0; i < (gridsize); i++) 	run("Dilate");
-//	for (i = 0; i < 24; i++) 	run("Dilate");
+	for (i = 0; i < DilateCycles; i++) 	run("Dilate");
 
 	// find main cell in mask
 	run("Analyze Particles...", "display clear include add");
@@ -119,11 +128,7 @@ function makeGrid(gridsize) {
 	run("Invert");
 
 	// make grid around mask
-	if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
-	else if (WindowDisplacement < 0){
-		division = abs(WindowDisplacement);
-		WindowDisplacement = (gridsize/division);
-	}
+
 	W_offset = (getWidth()  % WindowDisplacement) / 2;
 	H_offset = (getHeight() % WindowDisplacement) / 2;
 		
@@ -158,14 +163,38 @@ function MeasureClustering(KTch,MTch){
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);
 
-	CENs = newArray(roiManager("count"));
-	for (roi = 0; roi < roiManager("count"); roi++) {
+	selectImage(workingImage);
+	setSlice(MTch);
+
+	roiCount = roiManager("count");
+	ResultArray = newArray(roiCount*2);
+	for (roi = 0; roi < roiCount; roi++) {
+		// count number of CEN spots
+		selectImage(spots);
 		roiManager("select",roi);
-		CENs[roi] = getValue("IntDen");
+		ResultArray[roi] = getValue("IntDen");
+
+		// measure MT intensity
+		selectImage(workingImage);
+		roiManager("select",roi);
+		rawmean = getValue("Mean");	// raw mean intensity
+
+		getSelectionBounds(x, y, w, h);
+		makeRectangle(x-1, y-1, w+2, h+2);
+		roiManager("add");
+		XOR_array = newArray(2);	XOR_array[0]=roi; XOR_array[1]=roiCount;
+		roiManager("select", XOR_array);
+		roiManager("XOR");
+		bgmean = getValue("Mean");  // background mean intensity
+		ResultArray[roi+roiCount] = rawmean - bgmean; // background corrected intensity
+
+		roiManager("select", roiCount);
+		roiManager("delete");
+		
 	}
 	run("Select None");
 	
-	return CENs;
+	return ResultArray;
 }
 
 

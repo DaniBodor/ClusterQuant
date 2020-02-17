@@ -4,7 +4,7 @@ CropSize = 16;
 
 // Set parameters
 gridsize = 16;
-WindowDisplacement = 0;	// seet notes below
+WindowDisplacement = 2;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
 DilateCycles = WindowDisplacement;
@@ -68,8 +68,8 @@ MTintensity = Array.slice(resultArray,resultArray.length/2,resultArray.length);
 
 finish = getTime();
 duration = round((finish-start)/1000);
-Array.print(ori,resultArray);
-//print(WindowDisplacement,duration,"sec",roiManager("count"));
+//Array.print(ori,resultArray);
+print(WindowDisplacement,duration,"sec",roiManager("count"));
 
 
 
@@ -163,23 +163,26 @@ function MeasureClustering(KTch,MTch){
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);
 
-	selectImage(workingImage);
-	setSlice(MTch);
-
 	roiCount = roiManager("count");
-	ResultArray = newArray(roiCount*2);
+	CENs = newArray(roiCount);
+
 	for (roi = 0; roi < roiCount; roi++) {
 		//print(roi,roiCount,roiManager("count"));
 		
 		// count number of CEN spots
-		selectImage(spots);
 		roiManager("select",roi);
-		ResultArray[roi] = getValue("IntDen");
-
+		CENs[roi] = getValue("IntDen");	
+	}
+	
+	selectImage(workingImage);
+	setSlice(MTch);
+	MTint = newArray(roiCount);
+	for (roi = 0; roi < roiCount; roi++) {
 		// measure MT intensity
-		selectImage(workingImage);
+		
 		roiManager("select",roi);
 		rawmean = getValue("Mean");	// raw mean intensity
+
 
 		// measure background MT intensity
 		getSelectionBounds(x, y, w, h);
@@ -188,16 +191,18 @@ function MeasureClustering(KTch,MTch){
 		roiManager("select", newArray(roi,roiCount));
 		roiManager("XOR");			// create thin box around
 		bgmean = getValue("Mean");  // background mean intensity
-		ResultArray[roi+roiCount] = rawmean - bgmean; // background corrected intensity
+		MTint[roi] = rawmean - bgmean; // background corrected intensity
 
 		// clean up bg ROIs
 		roiManager("deselect");
 		roiManager("select", roiCount);
 		roiManager("delete");
-		
+
+//		MTint[roi] = rawmean;
 	}
 	run("Select None");
 	
+	ResultArray = Array.concat(CENs,MTint);
 	return ResultArray;
 }
 

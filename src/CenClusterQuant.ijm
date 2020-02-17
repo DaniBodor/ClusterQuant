@@ -4,7 +4,7 @@ CropSize = 16;
 
 // Set parameters
 gridsize = 16;
-WindowDisplacement = 2;	// seet notes below
+WindowDisplacement = 1;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
 DilateCycles = WindowDisplacement;
@@ -167,8 +167,6 @@ function MeasureClustering(KTch,MTch){
 	CENs = newArray(roiCount);
 
 	for (roi = 0; roi < roiCount; roi++) {
-		//print(roi,roiCount,roiManager("count"));
-		
 		// count number of CEN spots
 		roiManager("select",roi);
 		CENs[roi] = getValue("IntDen");	
@@ -179,20 +177,19 @@ function MeasureClustering(KTch,MTch){
 	MTint = newArray(roiCount);
 	for (roi = 0; roi < roiCount; roi++) {
 		// measure MT intensity
-		
 		roiManager("select",roi);
 		getStatistics(rawarea, rawmean);
-//		rawmean = getValue("Mean");	// raw mean intensity
-
-		// measure background MT intensity
+		rawdens = rawarea*rawmean;
+		
+		// measure signal + background MT intensity
 		getSelectionBounds(x, y, w, h);
 		makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
 		getStatistics(largearea, largemean);
-		bgarea = largearea - rawarea;
-		rawdens = rawarea*rawmean;
 		largedens = largearea*largemean;
-		bgsignal = (largedens-rawdens)/bgarea;
 		
+		// calculate bg signal and final signal
+		bgarea = largearea - rawarea;
+		bgsignal = (largedens-rawdens) / bgarea;
 		MTint[roi] = rawmean - bgsignal; // background corrected intensity
 
 

@@ -4,11 +4,11 @@ CropSize = 16;
 
 // Set parameters
 gridsize = 16;
-WindowDisplacement = 2;	// seet notes below
+WindowDisplacement = 0;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
 DilateCycles = WindowDisplacement;
-
+MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 // update WindowDisplacement as per rules above
 // WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
@@ -169,6 +169,8 @@ function MeasureClustering(KTch,MTch){
 	roiCount = roiManager("count");
 	ResultArray = newArray(roiCount*2);
 	for (roi = 0; roi < roiCount; roi++) {
+		//print(roi,roiCount,roiManager("count"));
+		
 		// count number of CEN spots
 		selectImage(spots);
 		roiManager("select",roi);
@@ -179,15 +181,17 @@ function MeasureClustering(KTch,MTch){
 		roiManager("select",roi);
 		rawmean = getValue("Mean");	// raw mean intensity
 
+		// measure background MT intensity
 		getSelectionBounds(x, y, w, h);
-		makeRectangle(x-1, y-1, w+2, h+2);
-		roiManager("add");
-		XOR_array = newArray(2);	XOR_array[0]=roi; XOR_array[1]=roiCount;
-		roiManager("select", XOR_array);
-		roiManager("XOR");
+		makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
+		roiManager("add");			// temporary ROI used for bg measurements
+		roiManager("select", newArray(roi,roiCount));
+		roiManager("XOR");			// create thin box around
 		bgmean = getValue("Mean");  // background mean intensity
 		ResultArray[roi+roiCount] = rawmean - bgmean; // background corrected intensity
 
+		// clean up bg ROIs
+		roiManager("deselect");
 		roiManager("select", roiCount);
 		roiManager("delete");
 		

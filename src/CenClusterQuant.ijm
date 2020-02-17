@@ -4,11 +4,13 @@ CropSize = 16;
 
 // Set parameters
 gridsize = 16;
-WindowDisplacement = 1;	// seet notes below
+WindowDisplacement = 2;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
 DilateCycles = WindowDisplacement;
+MTbgCorrections = 0;	// set to 1 to turn on background correction of microtubule signal
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
+
 
 // update WindowDisplacement as per rules above
 // WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
@@ -68,8 +70,12 @@ MTintensity = Array.slice(resultArray,resultArray.length/2,resultArray.length);
 
 finish = getTime();
 duration = round((finish-start)/1000);
-//Array.print(ori,resultArray);
-print(WindowDisplacement,duration,"sec",roiManager("count"));
+Array.print(ori,clusterList);
+Array.print(ori,MTintensity);
+
+
+
+//print(WindowDisplacement,duration,"sec",roiManager("count"));
 
 
 
@@ -175,22 +181,26 @@ function MeasureClustering(KTch,MTch){
 	selectImage(workingImage);
 	setSlice(MTch);
 	MTint = newArray(roiCount);
+	bgsignal = 0;
 	for (roi = 0; roi < roiCount; roi++) {
 		// measure MT intensity
 		roiManager("select",roi);
 		getStatistics(rawarea, rawmean);
 		rawdens = rawarea*rawmean;
 		
-		// measure signal + background MT intensity
-		getSelectionBounds(x, y, w, h);
-		makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
-		getStatistics(largearea, largemean);
-		largedens = largearea*largemean;
-		
-		// calculate bg signal and final signal
-		bgarea = largearea - rawarea;
-		bgsignal = (largedens-rawdens) / bgarea;
+		if (MTbgCorrections == 1){
+			// measure signal + background MT intensity
+			getSelectionBounds(x, y, w, h);
+			makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
+			getStatistics(largearea, largemean);
+			largedens = largearea*largemean;
+			
+			// calculate bg signal and final signal
+			bgarea = largearea - rawarea;
+			bgsignal = (largedens-rawdens) / bgarea;
+		}
 		MTint[roi] = rawmean - bgsignal; // background corrected intensity
+		
 
 
 //		following code is obsolete and slow and only exists for double checking whether measurements are correct

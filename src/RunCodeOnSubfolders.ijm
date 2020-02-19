@@ -1,17 +1,14 @@
-
 MacroPath = "C:\\Users\\dani\\Dropbox (Personal)\\____Recovery\\Fiji.app\\Custom_Codes\\CenClusterQuant\\src";
 MacroName = "CenClusterQuant.ijm";
 outputPath = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/";
 printDIRname = 1;		// set to 0 or 1 depending on whether you want directory name printed to log
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 printStartEnd = 1;		// set to 0 or 1 depending on whether you want start and end time printed to log
+saveLogResults = 0;		// set to 0 or 1 depending on whether you want to save log results
+image_identifier="PRJ";	// only files containing this identifier in the file name will be opened (empty string will include all)
 
 
-
-// set string identifier of images to include. Only files containing this identifier in the file name will be opened (empty string will include all)
-image_identifier	= "D3D_PRJ";
-
-
+// set up
 run ("Close All");	print ("\\Clear");
 dir = getDirectory ("Choose a Directory");
 print(MacroName, "==>" , dir);
@@ -19,8 +16,8 @@ print(MacroName, "==>" , dir);
 timestamp = fetchTimeStamp();
 if(printStartEnd==1)	print(substring(timestamp,lengthOf(timestamp)-4));
 
-
 subdirs = getFileList (dir);
+
 
 // lots of loops and conditions to find correct files in correct folders
 for (d = 0; d < subdirs.length; d++) {
@@ -53,6 +50,7 @@ for (d = 0; d < subdirs.length; d++) {
 }
 
 
+// print end time if desired
 if(printStartEnd==1){
 	endtime = fetchTimeStamp();
 	print(substring(endtime,lengthOf(endtime)-4));
@@ -78,6 +76,7 @@ function RunCode(IM){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function fetchTimeStamp(){
+	// allows for nice formatting of datetime
 	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 
 	// set to readable output

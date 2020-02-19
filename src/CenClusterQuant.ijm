@@ -50,8 +50,8 @@ if (out == "")	out = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Cus
 // can be commented out/deleted for final version, but doesn't interfere
 start = getTime();
 selectImage(1);
+rename (File.getName(getTitle()));
 ori = getTitle();
-
 
 run("Select None");
 run("Brightness/Contrast...");

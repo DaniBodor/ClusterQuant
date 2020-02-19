@@ -13,15 +13,14 @@ MT_bg_band = 2;			// width of band around grid window to measure background inte
 
 
 // update WindowDisplacement as per rules above
-// WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
-// WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes super long, 2 is fine)
-// WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
+// if WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
 if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
+// if WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
 else if (WindowDisplacement < 0){
 	division = abs(WindowDisplacement);
 	WindowDisplacement = (gridsize/division);
 }
-
+// if WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes kinda long, 2 is fine)
 
 // Set channel order
 DNAchannel = 1;
@@ -49,8 +48,6 @@ run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" +
 
 
 // Crop off deconvolution edges
-
-
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
 if (CropEdges){
@@ -64,7 +61,7 @@ makeDNAMask(DNAchannel);
 makeGrid(gridsize);
 resultArray = MeasureClustering(KTchannel,MTchannel);
 
-
+// print and save output
 clusterList = Array.slice(resultArray,0,resultArray.length/2);
 MTintensity = Array.slice(resultArray,resultArray.length/2,resultArray.length);
 
@@ -74,7 +71,8 @@ Array.print(ori,clusterList);
 Array.print(ori,MTintensity);
 
 selectWindow("Log");
-saveAs("Text", "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/Log_17Feb.txt");
+timestamp = fetchTimeStamp();
+saveAs("Text", "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/Log_"+timestamp+".txt");
 
 
 //print(WindowDisplacement,duration,"sec",roiManager("count"));
@@ -244,3 +242,18 @@ function MeasureClustering(KTch,MTch){
 
 
 
+function fetchTimeStamp(){
+	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
+	datetimeArray = newArray(month, dayOfMonth, hour, minute);
+
+	for (i = 0; i < datetimeArray.length; i++) {
+		unit = datetimeArray[i];
+		if (unit<10)	datetimeArray[i] = "0"+d2s(unit,0);
+		else			datetimeArray[i] = d2s(unit,0);
+	}
+	year = substring(d2s(year,0),2);
+	DateString = year+datetimeArray[0]+datetimeArray[1];
+	TimeString = datetimeArray[2]+datetimeArray[3];
+	
+	print (DateString+TimeString);
+}

@@ -7,8 +7,8 @@ gridsize = 16;
 WindowDisplacement = 2;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
-DilateCycles = WindowDisplacement;
-MTbgCorrMeth = 0;	// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
+DilateCycles = gridsize/2;
+MTbgCorrMeth = 2;	// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 
@@ -103,8 +103,9 @@ function makeDNAMask(DNA){
 	// make mask
 	setAutoThreshold(ThreshType+" dark");
 	run("Convert to Mask");
-	run("Erode");
-	for (i = 0; i < DilateCycles; i++) 	run("Dilate");
+	run("Options...", "iterations=1 count=1 do=Erode");
+	run("Options...", "iterations="+DilateCycles+" count=1 do=Dilate");
+	run("Options...", "iterations=1 count=1 do=Nothing");
 
 	// find main cell in mask
 	run("Analyze Particles...", "display clear include add");
@@ -121,8 +122,6 @@ function makeDNAMask(DNA){
 	selectImage(workingImage);
 	roiManager("select", 0);
 	run("Crop");
-	
-	//roiManager("reset");
 	close(mask);
 }
 

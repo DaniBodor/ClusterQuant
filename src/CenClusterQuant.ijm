@@ -233,33 +233,6 @@ function MeasureClustering(KTch,MTch){
 
 		// output
 		MTint[roi] = rawmean - bgsignal; // background corrected intensity
-		
-//		following code is obsolete and slow and only exists for double checking whether measurements are correct
-/*
-		// old bg calculating method
-		roiManager("add");			// temporary ROI used for bg measurements
-		roiManager("select", newArray(roi,roiCount));
-		roiManager("XOR");			// create thin box around
-		bgmean = getValue("Mean");  // background mean intensity
-		old_method = rawmean-bgmean;
-
-		// double check if result of 
-		//print(bgarea,rawdens,largedens);
-		E=1e8;
-		old_method = round(old_method*E);
-		new_method = round(MTint[roi]*E);
-		if (new_method-old_method != 0){
-			print(new_method/E,old_method/E);
-			waitForUser(roi,(new_method-old_method)/E);
-		}
-
-		// clean up bg ROIs
-		roiManager("deselect");
-		roiManager("select", roiCount);
-		roiManager("delete");
-		MTint[roi] = rawmean;
-*/
-
 	}
 	run("Select None");
 	

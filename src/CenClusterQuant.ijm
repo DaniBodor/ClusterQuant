@@ -1,16 +1,13 @@
-// Set to yes or no: (1=yes / 0=no)
+// Set on or off: (0 is off; >0 is on)
 saveLogOutput = 0;
 ExcludeMTOCs = 1;
+DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16). Set to 0 to not crop at all.
 
 // Set channel order
 DNAchannel = 1;
 COROchannel = 2;
 MTchannel = 3;
 KTchannel = 4;
-
-// Set deconvolution edges cropping
-CropEdges = 1;	// (1=yes / 0=no)
-CropSize = 16;	// pixels to crop around each edge (generally 16)
 
 // Set grid parameters
 gridsize = 16;				// size of individual windows to measure
@@ -21,9 +18,13 @@ ThreshType = "Huang";		// potentially use RenyiEntropy?
 GaussSigma = 40;			// currently unused
 DilateCycles = gridsize/2;	// number of dilation cycles (after 1 erode cycle) for DAPI outline
 
+// Centromere recognition
+CEN_prominence = 150;		// prominence value of find maxima function
+
 // Set MT background correction
 MTbgCorrMeth = 2;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
+
 
 
 /////// WindowDisplacement:
@@ -59,31 +60,31 @@ run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" +
 // Crop off deconvolution edges
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
-if (CropEdges){
-	makeRectangle(CropSize, CropSize, getWidth-CropSize*2, getHeight-CropSize*2);
+if (DeconvolutionCrop > 0){
+	makeRectangle(DeconvolutionCrop, DeconvolutionCrop, getWidth-DeconvolutionCrop*2, getHeight-DeconvolutionCrop*2);
 	run("Crop");
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Call sequential functions
-makeDNAMask(DNAchannel);
-if (ExcludeMTOCs == 1) SetExcludeRegions(MTchannel);
+makeMask(DNAchannel);
+if (ExcludeMTOCs > 0) SetExcludeRegions(MTchannel);
 makeGrid(gridsize);
-resultArray = MeasureClustering(KTchannel,MTchannel);
+CEN_and_MT_data = MeasureClustering(KTchannel,MTchannel);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // print and save output
-clusterList = Array.slice(resultArray,0,resultArray.length/2);
-MTintensity = Array.slice(resultArray,resultArray.length/2,resultArray.length);
+clusterList = Array.slice(CEN_and_MT_data,0,CEN_and_MT_data.length/2);
+MTintensity = Array.slice(CEN_and_MT_data,CEN_and_MT_data.length/2,CEN_and_MT_data.length);
 
 finish = getTime();
 duration = round((finish-start)/1000);
 Array.print(ori,clusterList);
 Array.print(ori,MTintensity);
 
-if (saveLogOutput == 1){
+if (saveLogOutput){
 	selectWindow("Log");
 	timestamp = fetchTimeStamp();
 	saveAs("Text", "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/Log_"+timestamp+".txt");
@@ -100,7 +101,7 @@ if (saveLogOutput == 1){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOM DEFINED FUNCTIONs
 
-function makeDNAMask(DNA){
+function makeMask(DNA){
 	// prep images
 	selectImage(workingImage);
 	setSlice (DNA);
@@ -209,7 +210,7 @@ function MeasureClustering(KTch,MTch){
 	// find kinetochores
 	selectImage(workingImage);
 	setSlice(KTch);
-	run("Find Maxima...", "prominence=150 strict exclude output=[Single Points]");
+	run("Find Maxima...", "prominence="+CEN_prominence+" strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
 	spots = getTitle();
 	run("Divide...", "value=255");
@@ -253,8 +254,8 @@ function MeasureClustering(KTch,MTch){
 	}
 	run("Select None");
 	
-	ResultArray = Array.concat(CENs,MTint);
-	return ResultArray;
+	data = Array.concat(CENs,MTint);
+	return data;
 }
 
 

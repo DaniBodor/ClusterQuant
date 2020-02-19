@@ -1,7 +1,10 @@
+// set output folder
+out = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/";
+
 // Set on or off: (0 is off; >0 is on)
 saveLogOutput = 0;
 ExcludeMTOCs = 1;
-DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16). Set to 0 to not crop at all.
+DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 // Set channel order
 DNAchannel = 1;
@@ -22,7 +25,7 @@ DilateCycles = gridsize/2;	// number of dilation cycles (after 1 erode cycle) fo
 CEN_prominence = 150;		// prominence value of find maxima function
 
 // Set MT background correction
-MTbgCorrMeth = 2;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
+MTbgCorrMeth = 0;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 
@@ -46,6 +49,7 @@ else if (WindowDisplacement < 0){
 start = getTime();
 selectImage(1);
 ori = getTitle();
+
 
 run("Select None");
 run("Brightness/Contrast...");
@@ -87,7 +91,7 @@ Array.print(ori,MTintensity);
 if (saveLogOutput){
 	selectWindow("Log");
 	timestamp = fetchTimeStamp();
-	saveAs("Text", "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/Log_"+timestamp+".txt");
+	saveAs("Text", out+"Log_"+timestamp+".txt");
 }
 
 
@@ -161,8 +165,9 @@ function SetExcludeRegions(MTs){
 	waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+T.");
 
 	// save grid regions
-	
-	
+	ROIoutdir = out+"ROIs"+File.separator;
+	File.makeDirectory(ROIoutdir);
+	roiManager("save", ROIoutdir+ori+".zip");
 }
 
 

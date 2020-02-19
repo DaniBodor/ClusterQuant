@@ -12,7 +12,7 @@ MTbgCorrMeth = 2;	// M background method: 0 = no correction; 1 = global backgrou
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 // Manual interventions (set to 1 to activate)
-ExcludeMTOCs = 1;
+ExcludeMTOCs = 0;
 
 
 // update WindowDisplacement as per rules above
@@ -144,6 +144,7 @@ function makeGrid(gridsize) {
 	mask = getTitle();
 	roiManager("select", 0);
 	run("Invert");
+	roiManager("delete");
 
 	// make grid around mask
 	W_offset = (getWidth()  % WindowDisplacement) / 2;
@@ -163,8 +164,8 @@ function makeGrid(gridsize) {
 	
 	selectImage(workingImage);
 	run("Select None");
-	roiManager("select",0);
-	roiManager("delete");
+//	roiManager("select",0);
+//	roiManager("delete");
 	roiManager("Remove Channel Info");
 	roiManager("Show All without labels");
 

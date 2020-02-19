@@ -8,7 +8,7 @@ WindowDisplacement = 2;	// seet notes below
 ThreshType = "Huang";	//"RenyiEntropy";
 GaussSigma = 40;
 DilateCycles = WindowDisplacement;
-MTbgCorrections = 0;	// set to 1 to turn on background correction of microtubule signal
+MTbgCorrMeth = 0;	// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 
@@ -183,15 +183,17 @@ function MeasureClustering(KTch,MTch){
 	selectImage(workingImage);
 	setSlice(MTch);
 	MTint = newArray(roiCount);
-	bgsignal = 0;
+	MTmedian = getValue("Median");
 	for (roi = 0; roi < roiCount; roi++) {
 		// measure MT intensity
 		roiManager("select",roi);
 		getStatistics(rawarea, rawmean);
 		rawdens = rawarea*rawmean;
-		
-		if (MTbgCorrections == 1){
-			// measure signal + background MT intensity
+
+		if		(MTbgCorrMeth == 0)		bgsignal = 0;			// no background correction
+		else if (MTbgCorrMeth == 1)		bgsignal = MTmedian;	// global background correction
+		else if (MTbgCorrMeth == 2){	// local background correction
+			// measure (signal + background) MT intensity
 			getSelectionBounds(x, y, w, h);
 			makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
 			getStatistics(largearea, largemean);
@@ -201,12 +203,15 @@ function MeasureClustering(KTch,MTch){
 			bgarea = largearea - rawarea;
 			bgsignal = (largedens-rawdens) / bgarea;
 		}
+
+		
 		MTint[roi] = rawmean - bgsignal; // background corrected intensity
 		
 
 
-//		following code is obsolete and slow and only exists for double checking whether measurements are correct
+
 /*
+//		following code is obsolete and slow and only exists for double checking whether measurements are correct
 		// old bg calculating method
 		roiManager("add");			// temporary ROI used for bg measurements
 		roiManager("select", newArray(roi,roiCount));

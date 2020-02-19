@@ -154,11 +154,12 @@ function SetExcludeRegions(MTs){
 	run("Set... ", "zoom=300");
 	roiManager("Show All without labels");
 	setTool("polygon");
+	run("Colors...", "foreground=white background=black selection=green");
 
 	// manual intervention
-	waitForUser("Select regions to exclude.\nAdd separate regions to ROI manager using Ctrl+T.");
+	waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+T.");
 
-	// dkslfks
+	// save grid regions
 	
 	
 }
@@ -175,6 +176,10 @@ function makeGrid(gridsize) {
 	mask = getTitle();
 	roiManager("select", 0);
 	run("Invert");
+	roiManager("delete");
+
+	// exclude MTOCs from mask 	
+	roiManager("fill");
 	roiManager("delete");
 
 	// make grid around mask

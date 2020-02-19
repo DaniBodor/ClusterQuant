@@ -269,18 +269,13 @@ function MeasureClustering(KTch,MTch){
 
 function fetchTimeStamp(){
 	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
-	datetimeArray = newArray(month, dayOfMonth, hour, minute);
 
-	for (i = 0; i < datetimeArray.length; i++) {
-		unit = datetimeArray[i];
-		if (unit<10)	datetimeArray[i] = "0"+d2s(unit,0);
-		else			datetimeArray[i] = d2s(unit,0);
-	}
+	// set to readable output
 	year = substring(d2s(year,0),2);
-	DateString = year+datetimeArray[0]+datetimeArray[1];
-	TimeString = datetimeArray[2]+datetimeArray[3];
+	DateString = year + IJ.pad(month+1,2) + IJ.pad(dayOfMonth,2);
+	TimeString = IJ.pad(hour,2) + IJ.pad(minute,2);
 
-	TimeStamp = DateString+TimeString;
-	
-	return TimeStamp;
+	// concatenate and return
+	DateTime = DateString+TimeString;
+	return DateTime;
 }

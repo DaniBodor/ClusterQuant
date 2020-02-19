@@ -11,6 +11,9 @@ DilateCycles = gridsize/2;
 MTbgCorrMeth = 2;	// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
+// Manual interventions (set to 1 to activate)
+ExcludeMTOCs = 1;
+
 
 // update WindowDisplacement as per rules above
 // if WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
@@ -56,10 +59,14 @@ if (CropEdges){
 }
 
 
+////////////////////////////////////////////////////////////////////////
 // Call sequential functions
 makeDNAMask(DNAchannel);
+if (ExcludeMTOCs == 1) SetExcludeRegions(MTchannel);
 makeGrid(gridsize);
 resultArray = MeasureClustering(KTchannel,MTchannel);
+////////////////////////////////////////////////////////////////////////
+
 
 // print and save output
 clusterList = Array.slice(resultArray,0,resultArray.length/2);
@@ -123,6 +130,12 @@ function makeDNAMask(DNA){
 	close(mask);
 }
 
+function SetExcludeRegions(MTs){
+	selectImage(workingImage);
+	Stack.setChannel(MTs);
+	waitForUser("select regions to exclude");
+}
+
 
 function makeGrid(gridsize) {
 	// make cell mask image
@@ -133,7 +146,6 @@ function makeGrid(gridsize) {
 	run("Invert");
 
 	// make grid around mask
-
 	W_offset = (getWidth()  % WindowDisplacement) / 2;
 	H_offset = (getHeight() % WindowDisplacement) / 2;
 		
@@ -254,6 +266,9 @@ function fetchTimeStamp(){
 	year = substring(d2s(year,0),2);
 	DateString = year+datetimeArray[0]+datetimeArray[1];
 	TimeString = datetimeArray[2]+datetimeArray[3];
+
+	TimeStamp = DateString+TimeString;
 	
-	print (DateString+TimeString);
+	return TimeStamp;
+	//print (DateString+TimeString);
 }

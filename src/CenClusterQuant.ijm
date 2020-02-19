@@ -1,6 +1,6 @@
 // Set to yes or no: (1=yes / 0=no)
 saveLogOutput = 0;
-ExcludeMTOCs = 0;
+ExcludeMTOCs = 1;
 
 // Set channel order
 DNAchannel = 1;
@@ -147,10 +147,22 @@ function makeDNAMask(DNA){
 
 
 function SetExcludeRegions(MTs){
+	// select correct visuals
 	selectImage(workingImage);
 	Stack.setChannel(MTs);
-	waitForUser("select regions to exclude");
+	run("Select None");
+	run("Set... ", "zoom=300");
+	roiManager("Show All without labels");
+	setTool("polygon");
+
+	// manual intervention
+	waitForUser("Select regions to exclude.\nAdd separate regions to ROI manager using Ctrl+T.");
+
+	// dkslfks
+	
+	
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

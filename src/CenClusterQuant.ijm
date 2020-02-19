@@ -1,6 +1,3 @@
-// set output folder
-out = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/";
-
 // Set on or off: (0 is off; >0 is on)
 saveLogOutput = 0;
 ExcludeMTOCs = 1;
@@ -39,6 +36,11 @@ else if (WindowDisplacement < 0){
 	division = abs(WindowDisplacement);
 	WindowDisplacement = (gridsize/division);
 }
+
+// set output folder
+out = getArgument();
+if (out == "")	out = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/";
+
 
 
 

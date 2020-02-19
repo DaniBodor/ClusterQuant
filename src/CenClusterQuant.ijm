@@ -188,8 +188,8 @@ function makeGrid(gridsize) {
 
 	// exclude MTOCs from mask 	
 	roiManager("fill");
-	roiManager("delete");
-
+	roiManager("reset");	
+	
 	// make grid around mask
 	W_offset = (getWidth()  % WindowDisplacement) / 2;  // used to center windows around mask area
 	H_offset = (getHeight() % WindowDisplacement) / 2;	// used to center windows around mask area

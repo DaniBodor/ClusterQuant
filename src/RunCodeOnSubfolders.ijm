@@ -42,7 +42,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 					// save output
 					selectWindow("Log");
-					saveAs("Text", outputPath+"Log_"+timestamp+".txt");
+					if (saveLogResults)		saveAs("Text", outputPath+"Log_"+timestamp+".txt");
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 // Set on or off: (0 is off; >0 is on)
 saveLogOutput = 0;
-ExcludeMTOCs = 1;
+ExcludeMTOCs = 0;
 DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 // Set channel order

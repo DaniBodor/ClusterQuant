@@ -6,15 +6,15 @@ printIMname = 0;		// set to 0 or 1 depending on whether you want image name prin
 printStartEnd = 1;		// set to 0 or 1 depending on whether you want start and end time printed to log
 saveLogResults = 0;		// set to 0 or 1 depending on whether you want to save log results
 image_identifier="PRJ";	// only files containing this identifier in the file name will be opened (empty string will include all)
-
+non_data_prefix="##### "// printed in lines that are not data
 
 // set up
 run ("Close All");	print ("\\Clear");
 dir = getDirectory ("Choose a Directory");
-print(MacroName, "==>" , dir);
+print(non_data_prefix+MacroName, "==>" , dir);
 
 timestamp = fetchTimeStamp();
-if(printStartEnd==1)	print(substring(timestamp,lengthOf(timestamp)-4));
+if(printStartEnd==1)	print(non_data_prefix+substring(timestamp,lengthOf(timestamp)-4));
 
 subdirs = getFileList (dir);
 
@@ -24,14 +24,14 @@ for (d = 0; d < subdirs.length; d++) {
 	subdirname = dir + subdirs [d];
 	if ( endsWith (subdirname, "/")){
 		filelist = getFileList (subdirname);
-		if (printDIRname == 1)	print(subdirname);
+		if (printDIRname == 1)	print(non_data_prefix+subdirname);
 		for (f = 0; f < filelist.length; f++) {
 			filename = subdirname + filelist [f];
 			if ( endsWith (filename, ".tif") || endsWith (filename, ".dv") ){
 				if (indexOf(filelist [f] , image_identifier) >= 0 ){
 					// correct files were found
 					
-					//print(filename);
+					//print(non_data_prefixfilename);
 					open ( filename );
 					ori = getTitle ();
 					
@@ -53,16 +53,16 @@ for (d = 0; d < subdirs.length; d++) {
 // print end time if desired
 if(printStartEnd==1){
 	endtime = fetchTimeStamp();
-	print(substring(endtime,lengthOf(endtime)-4));
+	print(non_data_prefix+substring(endtime,lengthOf(endtime)-4));
 }
-print ("All done");
+print (non_data_prefix+"All done");
 saveAs("Text", outputPath+"Log_"+timestamp+".txt");
 
 
 
 
 function RunCode(IM){
-	if (printIMname == 1)	print(IM);
+	if (printIMname == 1)	print(non_data_prefix+IM);
 	fullMacroFileLocation = MacroPath + File.separator + MacroName;
 	runMacro(fullMacroFileLocation,outputPath);
 	

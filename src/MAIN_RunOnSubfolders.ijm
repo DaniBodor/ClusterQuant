@@ -10,17 +10,17 @@ non_data_prefix="##### "// printed in lines that are not data
 run ("Close All");	print ("\\Clear");
 dir = getDirectory ("Choose CenClusterQuant main directory");
 
+// recognize own location
 BaseDir = File.getParent(dir);
 CurrentFolder = File.getName(BaseDir);
 while (CurrentFolder != MacroName){
 	BaseDir = File.getParent(BaseDir);
 	CurrentFolder = File.getName(BaseDir);
 }
-
+// other paths required
 MacroPath = BaseDir + File.separator  + "src" + File.separator + MacroName + ".ijm";
-OutputPath = BaseDir + File.separator  + "results" + File.separator + "output" + File.separator;
-
-//print(non_data_prefix+MacroName, "==>" , dir);
+OutputPath = BaseDir + File.separator  + "results" + File.separator + "output";
+print(non_data_prefix+"Running", MacroName, "on" , File.getName(dir));
 
 timestamp = fetchTimeStamp();
 if(printStartEnd==1)	print(non_data_prefix+"Start time: " +substring(timestamp,lengthOf(timestamp)-4));
@@ -33,7 +33,7 @@ for (d = 0; d < subdirs.length; d++) {
 	subdirname = dir + subdirs [d];
 	if ( endsWith (subdirname, "/")){
 		filelist = getFileList (subdirname);
-		if (printDIRname == 1)	print(non_data_prefix + File.getName(subdirname));
+		if (printDIRname == 1)	print("***" + File.getName(subdirname));
 		for (f = 0; f < filelist.length; f++) {
 			filename = subdirname + filelist [f];
 			if ( endsWith (filename, ".tif") || endsWith (filename, ".dv") ){

@@ -35,6 +35,7 @@ for (d = 0; d < subdirs.length; d++) {
 		filelist = getFileList (subdirname);
 		if (printDIRname == 1)	print("***" + File.getName(subdirname));
 		for (f = 0; f < filelist.length; f++) {
+		//for (f = 0; f < 5; f++) {
 			filename = subdirname + filelist [f];
 			if ( endsWith (filename, ".tif") || endsWith (filename, ".dv") ){
 				if (indexOf(filelist [f] , image_identifier) >= 0 ){

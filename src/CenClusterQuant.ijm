@@ -87,8 +87,9 @@ MTintensity = Array.slice(CEN_and_MT_data,CEN_and_MT_data.length/2,CEN_and_MT_da
 
 finish = getTime();
 duration = round((finish-start)/1000);
-Array.print(ori,clusterList);
-Array.print(ori,MTintensity);
+print("**"+ori);
+Array.print(clusterList);
+Array.print(MTintensity);
 
 if (saveLogOutput){
 	selectWindow("Log");

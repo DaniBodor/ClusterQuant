@@ -19,7 +19,7 @@ while (CurrentFolder != MacroName){
 }
 // other paths required
 MacroPath = BaseDir + File.separator  + "src" + File.separator + MacroName + ".ijm";
-OutputPath = BaseDir + File.separator  + "results" + File.separator + "output";
+OutputPath = BaseDir + File.separator  + "results" + File.separator + "output"+File.separator;
 print(non_data_prefix+"Running", MacroName, "on" , File.getName(dir));
 
 timestamp = fetchTimeStamp();

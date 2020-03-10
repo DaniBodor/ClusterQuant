@@ -95,6 +95,6 @@ function fetchTimeStamp(){
 	TimeString = IJ.pad(hour,2) + IJ.pad(minute,2);
 
 	// concatenate and return
-	DateTime = DateString+TimeString;
+	DateTime = DateString+"_"+TimeString;
 	return DateTime;
 }

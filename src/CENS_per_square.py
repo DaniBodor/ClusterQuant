@@ -48,7 +48,7 @@ for i,x in enumerate(lines):
 df=df [['Cond','Cell','CENs','MT_I']]
 
 
-#%% IMPORT DATA
+#%% 
 
 
 

@@ -12,7 +12,7 @@ small = 'Log_2003101536.txt'
 large = 'Log_2003091541.txt'
 
 
-filename = large
+filename = tiny
 
 
 import pandas as pd
@@ -124,17 +124,19 @@ if make_vplots:
         cond_df = full_df[full_df.Condition == currcond]
         for currcell in cond_df.Cell.unique():
             violin_df = cond_df[cond_df.Cell == currcell]
+            violin_df.CENs = violin_df.CENs.astype('int')
             sns.violinplot(x ='CENs', y='tubI', data=violin_df)
             
             # plot formatting
-            plt.title(currcell)
+            plt.title(currcond + ':' + currcell)
             plt.xlabel('Centromeres')
             plt.ylabel('Tubulin intensity')
+            plt.xlim(right = full_df.CENs.max()+.5 )
+#            print(plt.xlim())
             plt.grid(axis='y')
             
             violin_name = currcond + "_" + currcell
             figurepath = os.path.abspath(os.path.join(outputdir, violin_name  +'_violin.png'))
-    #        figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'__hist.png' ))
     
             plt.savefig(figurepath,dpi=1200)
     #        plt.show()

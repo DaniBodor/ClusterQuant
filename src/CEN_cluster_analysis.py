@@ -34,6 +34,9 @@ base_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 datapath = os.path.abspath(os.path.join(base_dir, 'results', 'output', filename))
 outputdir = os.path.abspath(os.path.join(base_dir, 'results', 'figures'))
 
+if not os.path.exists(outputdir):
+    os.mkdir(outputdir)
+    
 
 read_and_order = 1
 cen_histograms = 1

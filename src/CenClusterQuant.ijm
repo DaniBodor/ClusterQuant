@@ -10,8 +10,8 @@ MTchannel = 3;
 KTchannel = 4;
 
 // Set grid parameters
-gridsize = 16;				// size of individual windows to measure
-WindowDisplacement = 2;		// serial displacement of window (0 = gridsize; negative = fraction of gridsize -- see notes below)
+gridsize = 32;				// size of individual windows to measure
+WindowDisplacement = -4;		// serial displacement of window (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
 // Set DAPI outline parameter
 ThreshType = "Huang";		// potentially use RenyiEntropy?

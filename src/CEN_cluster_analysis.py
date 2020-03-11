@@ -12,7 +12,8 @@ small = 'Log_2003101536.txt'
 large = 'Log_2003091541.txt'
 
 
-filename = tiny
+filename = large
+MaxLength = 35
 
 
 import pandas as pd
@@ -40,7 +41,7 @@ make_vplots = 1
 
 
 #%% FUNCTIONS
-def make_histdf(df, MaxLen=35, ex_zeroes=True):
+def make_histdf(df, ex_zeroes=True):
     '''
     This function will create a frequency distribution dataframe used for histograms
     df: dataframe; input data
@@ -55,15 +56,20 @@ def make_histdf(df, MaxLen=35, ex_zeroes=True):
                      .rename('frequency')
                      .reset_index()
                      .sort_values('CENs'))
-    df.CENs = df.CENs.astype('int')
     
-    if MaxLen:
-        long_cond_names = list(df.Condition.unique())
-        short_cond_names = [x[:MaxLen-3]+'...' if len(x)>MaxLen  else x for x in long_cond_names]
-        df = df.replace(long_cond_names,short_cond_names)
+    if MaxLength:
+        df = shorten_column_name(df,'Condition',MaxLength)
     
     return df
 
+
+
+def shorten_column_name(df,column,L):
+    long_cond_names = list(df.Condition.unique())
+    short_cond_names = [x[:L-3]+'...' if len(x)>L  else x for x in long_cond_names]
+    df = df.replace(long_cond_names,short_cond_names)
+    
+    return df
 
 #%% READ AND ORDER DATA
 
@@ -77,12 +83,10 @@ if read_and_order:
     for i,l in enumerate(lines):
         if l.startswith('***'):
             Condition = l[3:-1]
-#            if len(Condition) > 40:
-#                Condition = Condition[:35]+'...'
         elif l.startswith('**'):
             Cell = l[2:-1]
-            CENs = [float(s)   for s in lines[i+1].split(', ')]
-            tubI = [float(s) for s in lines[i+2].split(', ')]
+            CENs = [int(s)   for s in lines[i+1].split(', ')]
+            tubI = [float(s)   for s in lines[i+2].split(', ')]
             
             indata = {'CENs': CENs,
                       'tubI': tubI,
@@ -113,7 +117,8 @@ if cen_histograms:
     
     figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'__hist.png'))
     plt.savefig(figurepath,dpi=1200)
-#    plt.show
+#    plt.show()
+    plt.clf()
 
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
@@ -122,23 +127,29 @@ if make_vplots:
     
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
+        
+        
+        if MaxLength:
+            condname = currcond[:MaxLength-3]+'...'
+        else:
+            condname = currcond
+            
         for currcell in cond_df.Cell.unique():
             violin_df = cond_df[cond_df.Cell == currcell]
-            violin_df.CENs = violin_df.CENs.astype('int', copy=False)
-#            violin_df.loc[:,'CENs'] = violin_df.CENs.astype('int', copy=False)
             sns.violinplot(x ='CENs', y='tubI', data=violin_df)
             
             # plot formatting
-            plt.title(currcond + '\n' + currcell)
+            plt.title(condname + '\n' + currcell)
             plt.xlabel('Centromeres')
             plt.ylabel('Tubulin intensity')
             plt.xlim(right = full_df.CENs.max()+.5 )
-#            print(plt.xlim())
             plt.grid(axis='y')
             
-            violin_name = currcond + "_" + currcell
+
+            violin_name = condname + "_" + currcell
             figurepath = os.path.abspath(os.path.join(outputdir, violin_name  +'_violin.png'))
     
             plt.savefig(figurepath,dpi=1200)
-    #        plt.show()
+#            plt.show()
             plt.clf()
+#            crash

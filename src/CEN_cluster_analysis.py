@@ -12,7 +12,7 @@ small = 'Log_2003091541.txt'
 large = 'Log_2003101536.txt'
 
 
-filename = small
+filename = tiny
 
 import pandas as pd
 import itertools
@@ -27,14 +27,15 @@ import numpy as np
 
 starttime = datetime.now()
 rseed(22)
-datapath = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'results', 'output', filename))
 
-
-
+base_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+datapath = os.path.abspath(os.path.join(base_dir, 'results', 'output', filename))
+outputdir = os.path.abspath(os.path.join(base_dir, 'results', 'figures'))
 
 
 read_and_order = 1
 cen_histograms = 1
+make_vplots = 1
 
 
 #%% FUNCTIONS
@@ -69,7 +70,7 @@ if read_and_order:
     
     with open (datapath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
-    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','MT_I'])
+    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','MTint'])
 
     Condition,Cell = '',''
     for i,l in enumerate(lines):
@@ -80,45 +81,41 @@ if read_and_order:
         elif l.startswith('**'):
             Cell = l[2:-1]
             CENs = [float(s)   for s in lines[i+1].split(', ')]
-            MT_I = [float(s) for s in lines[i+2].split(', ')]
+            MTint = [float(s) for s in lines[i+2].split(', ')]
             
             indata = {'CENs': CENs,
-                      'MT_I': MT_I,
+                      'MTint': MTint,
                       'Condition': [Condition]*len(CENs),
                       'Cell': [Cell]*len(CENs)}
             
-            newdf = pd.DataFrame.from_dict(indata)
-            full_df = full_df.append(newdf)
-    full_df=full_df [['Condition','Cell','CENs','MT_I']]
+            celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
+            full_df = full_df.append(celldf)                # add cell to dataframe
+    full_df=full_df [['Condition','Cell','CENs','MTint']]    # reorder columns
 
 
 
 
-#%% OUTPUT CEN HISTOGRAM
+#%% MAKE CEN HISTOGRAM
 
 if cen_histograms:
 
-
-#    Condition_gr = full_df.groupby(['Condition'])
+    histogram_df = make_histdf(full_df)    
     
-    
-#    sns.countplot(data=full_df, x='CENs', hue = 'Condition')
-#    plt.show()
-
-#    if histogram_exclude_zero:
-#        histogram_df = 
-#        
-#    else:
-    
-
-    histogram_df = make_histdf(full_df)
     sns.barplot(x="CENs", y="frequency", hue="Condition", data=histogram_df)
-
     plt.legend(prop={'size': 12})
     plt.title('Centromeres per square')
     plt.xlabel('Centromeres')
     plt.ylabel('Frequency')
     
-    plt.show()
+    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'.png'))
+    plt.savefig(figurepath,dpi=1200)
 
 
+#%% MAKE INDIVIDUAL VIOLINPLOTS
+    
+if make_vplots:
+    
+    for cell in full_df.Cell.unique():
+        violin_df = full_df[full_df.Cell == cell]
+        sns.violinplot(x ='CENs', y='MTint', data=violin_df)
+        plt.show()

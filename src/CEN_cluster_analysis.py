@@ -124,11 +124,12 @@ if make_vplots:
         cond_df = full_df[full_df.Condition == currcond]
         for currcell in cond_df.Cell.unique():
             violin_df = cond_df[cond_df.Cell == currcell]
-            violin_df.CENs = violin_df.CENs.astype('int')
+            violin_df.CENs = violin_df.CENs.astype('int', copy=False)
+#            violin_df.loc[:,'CENs'] = violin_df.CENs.astype('int', copy=False)
             sns.violinplot(x ='CENs', y='tubI', data=violin_df)
             
             # plot formatting
-            plt.title(currcond + ':' + currcell)
+            plt.title(currcond + '\n' + currcell)
             plt.xlabel('Centromeres')
             plt.ylabel('Tubulin intensity')
             plt.xlim(right = full_df.CENs.max()+.5 )

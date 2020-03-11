@@ -11,7 +11,7 @@ KTchannel = 4;
 
 // Set grid parameters
 gridsize = 16;				// size of individual windows to measure
-WindowDisplacement = 0;		// serial displacement of window (0 = gridsize; negative = fraction of gridsize -- see notes below)
+WindowDisplacement = 2;		// serial displacement of window (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
 // Set DAPI outline parameter
 ThreshType = "Huang";		// potentially use RenyiEntropy?
@@ -22,7 +22,7 @@ DilateCycles = gridsize/2;	// number of dilation cycles (after 1 erode cycle) fo
 CEN_prominence = 150;		// prominence value of find maxima function
 
 // Set MT background correction
-MTbgCorrMeth = 1;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
+MTbgCorrMeth = 0;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
 

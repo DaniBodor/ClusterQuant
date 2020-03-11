@@ -11,9 +11,13 @@ Place any number of data folders (one folder containing multiple images) within 
 Filenames ending with "PRJ.tif" or "PRJ.dv" (note the capitals) will be read by the code. Other files can exist within data folder without interference.
 
 Run src>MAIN_RunOnSubfolders.ijm and select data>raw as base directory (drag into ImageJ or FiJi and hit run).
-This will output a *.txt file with the data in the following format: /i[need to write this up]/i
+This will output a *.txt file with the data in the following format: [need to write this up]
 
-Next, run src>CEN_cluster_analysis.py from a Python compiler (doesn't work from FiJi for whatever reason)
+Next, run src>CEN_cluster_analysis.py from a Python compiler (doesn't work from FiJi for whatever reason).
+This will output three types of data:
+1) a single histogram comparing number of CENs per squareby dataset
+2) one lineplot per dataset showing the average +/- SD (I believe) tubulin intensity by number of centromeres per square
+3) in a subfolder; one violinplot per image showing the distribution of tubulin intensity by number of centromeres per square
 
 
 ## Project organization

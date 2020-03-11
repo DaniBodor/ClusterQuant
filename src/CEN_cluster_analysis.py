@@ -38,7 +38,7 @@ cen_histograms = 1
 
 
 #%% FUNCTIONS
-def make_histdf(df, MaxLen=40, ex_zeroes=True):
+def make_histdf(df, MaxLen=35, ex_zeroes=True):
     '''
     This function will create a frequency distribution dataframe used for histograms
     df: dataframe; input data
@@ -57,7 +57,7 @@ def make_histdf(df, MaxLen=40, ex_zeroes=True):
     if MaxLen:
         long_cond_names = list(df.Condition.unique())
         short_cond_names = [x[:MaxLen-3]+'...' if len(x)>MaxLen  else x for x in long_cond_names]
-        df.replace(long_cond_names,short_cond_names)
+        df = df.replace(long_cond_names,short_cond_names)
     
     return df
 

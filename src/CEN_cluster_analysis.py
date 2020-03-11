@@ -8,11 +8,12 @@ Created on Mon Mar  9 14:13:59 2020
 
 
 tiny = 'Log_200310_1543.txt'
-small = 'Log_2003091541.txt'
-large = 'Log_2003101536.txt'
+small = 'Log_2003101536.txt'
+large = 'Log_2003091541.txt'
 
 
-filename = tiny
+filename = large
+
 
 import pandas as pd
 import itertools
@@ -110,21 +111,31 @@ if cen_histograms:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'_hist.png'))
-#    plt.savefig(figurepath,dpi=1200)
-    plt.show
+    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'__hist.png'))
+    plt.savefig(figurepath,dpi=1200)
+#    plt.show
 
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
 if make_vplots:
     
-    for cell in full_df.Cell.unique():
-        violin_df = full_df[full_df.Cell == cell]
-        sns.violinplot(x ='CENs', y='tubI', data=violin_df)
-        
-        # plot formatting
-        plt.xlabel('Centromeres')
-        plt.ylabel('Tubulin intensity')
-        plt.grid(axis='y')
-        plt.show()
+    for currcond in full_df.Condition.unique():
+        cond_df = full_df[full_df.Condition == currcond]
+        for currcell in cond_df.Cell.unique():
+            violin_df = cond_df[cond_df.Cell == currcell]
+            sns.violinplot(x ='CENs', y='tubI', data=violin_df)
+            
+            # plot formatting
+            plt.title(currcell)
+            plt.xlabel('Centromeres')
+            plt.ylabel('Tubulin intensity')
+            plt.grid(axis='y')
+            
+            violin_name = currcond + "_" + currcell
+            figurepath = os.path.abspath(os.path.join(outputdir, violin_name  +'_violin.png'))
+    #        figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'__hist.png' ))
+    
+            plt.savefig(figurepath,dpi=1200)
+    #        plt.show()
+            plt.clf()

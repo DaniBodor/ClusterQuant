@@ -8,7 +8,7 @@ non_data_prefix="##### "// printed in lines that are not data
 
 // set up
 run ("Close All");	print ("\\Clear");
-dir = getDirectory ("Choose CenClusterQuant main directory");
+dir = getDirectory ("Choose CenClusterQuant base directory");
 
 // recognize own location
 BaseDir = File.getParent(dir);

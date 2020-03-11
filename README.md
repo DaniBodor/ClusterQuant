@@ -1,13 +1,24 @@
-# Centromere cluster quantification
+﻿# Centromere cluster quantification
 
-Version 0.1.0
+Version 1.0
 
-Measure degree of clustering of individual centromere spots from microscopy data
+Measure degree of clustering of individual centromere spots from microscopy data.
 
-Used Barbara Vreede's 'good-enough-project' cookiecutter setup for project organization (cookiecutter gh:bvreede/good-enough-project)
+
+## Input/Output
+
+Place any number of data folders (one folder containing multiple images) within data>raw (see Project organization below). These will be annotated separately and will result in properly formatted output graphs.
+Filenames ending with "PRJ.tif" or "PRJ.dv" (note the capitals) will be read by the code. Other files can exist within data folder without interference.
+
+Run src>MAIN_RunOnSubfolders.ijm and select data>raw as base directory (drag into ImageJ or FiJi and hit run).
+This will output a *.txt file with the data in the following format: /i[need to write this up]/i
+
+Next, run src>CEN_cluster_analysis.py from a Python compiler (doesn't work from FiJi for whatever reason)
 
 
 ## Project organization
+
+Used Barbara Vreede's 'good-enough-project' cookiecutter setup for project organization (cookiecutter gh:bvreede/good-enough-project)
 
 ```
 .
@@ -22,6 +33,10 @@ Used Barbara Vreede's 'good-enough-project' cookiecutter setup for project organ
 ├── data               <- All project data, ignored by git
 │   ├── processed      <- The final, canonical data sets for modeling. (PG)
 │   ├── raw            <- The original, immutable data dump. (RO)
+│   │    ├── dataset 1 <- separate conditions to be analyzed (containing multiple images). (RO)
+│   │    ├── dataset 2 
+│   │    ├── ...       
+│   │    └── dataset N 
 │   └── temp           <- Intermediate data that has been transformed. (PG)
 ├── docs               <- Documentation notebook for users (HW)
 │   ├── manuscript     <- Manuscript source, e.g., LaTeX, Markdown, etc. (HW)

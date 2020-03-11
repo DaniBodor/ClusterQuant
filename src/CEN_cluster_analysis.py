@@ -19,13 +19,11 @@ MaxLength = 35
 
 
 import pandas as pd
-import itertools
-import sys
+#import itertools
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 from random import seed as rseed
-from pathlib import Path
 import seaborn as sns
 import numpy as np
 
@@ -40,7 +38,7 @@ outputdir = os.path.abspath(os.path.join(base_dir, 'results', 'figures'))
 read_and_order = 1
 cen_histograms = 1
 make_vplots = 1
-
+violinpercell = 1
 
 #%% FUNCTIONS
 def make_histdf(df, ex_zeroes=True):
@@ -135,37 +133,60 @@ if make_vplots:
 
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
-        
+
         #shorten condition name
         if MaxLength and len(currcond) > MaxLength:
             condname = currcond[:MaxLength-3]+'...'
         else:
             condname = currcond
-            
-        for i,currcell in enumerate(cond_df.Cell.unique()):
-            print (i,end=',')
-            violin_df = cond_df[cond_df.Cell == currcell]
 
-            # add missing x values
-            for N in range(max_CENs+1):
-                if not N in violin_df.CENs.unique():
-                    newrow = {'Cndition':condname, 'Cell':currcell, 'CENs':N, 'tubI':np.nan}
-                    violin_df = violin_df.append(newrow, ignore_index=True)
-            
-            
-            
-            # plot & formatting
-            sns.violinplot(x ='CENs', y='tubI', data=violin_df, scale="count")
-            
-            plt.title(condname + '\n' + currcell)
-            plt.xlabel('Centromeres')
-            plt.ylabel('Tubulin intensity')
-            plt.xlim(right = max_CENs + 0.5 )
-            plt.grid(axis='y')
-            
-            # save figure            
-            violin_name = condname + "_" + currcell
-            figurepath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
-            plt.savefig(figurepath,dpi=600)
-#            plt.show()
-            plt.clf()
+        # create line of all data per condition
+#        sns.violinplot(x ='CENs', y='tubI', data=cond_df, scale="width", color = 'lightskyblue')
+        sns.lineplot  (x ='CENs', y='tubI', data=cond_df, color = 'r')
+        
+        plt.title(condname)
+        plt.xlabel('Centromeres')
+        plt.ylabel('Tubulin intensity')
+        plt.xlim(-0.5, max_CENs + 0.5 )
+#        plt.ylim(full_df.tubI.min(),full_df.tubI.max())
+        plt.xticks(range(max_CENs+1))
+        plt.grid()
+#        plt.show()
+        
+        # save violin plot
+        figurepath = os.path.abspath(os.path.join(outputdir,filename[:-4]+ '_' + condname  +'_line.png'))
+#        figurepath = os.path.abspath(os.path.join(vfigdir, condname  +'_violin.png'))
+        plt.savefig(figurepath,dpi=600)
+        plt.clf()
+
+        if violinpercell:
+        # create violin of data per cell
+            for i,currcell in enumerate(cond_df.Cell.unique()):
+                print (i,end=',')
+                violin_df = cond_df[cond_df.Cell == currcell]
+    
+                # add missing x values
+                for N in range(max_CENs+1):
+                    if not N in violin_df.CENs.unique():
+                        newrow = {'Cndition':condname, 'Cell':currcell, 'CENs':N, 'tubI':np.nan}
+                        violin_df = violin_df.append(newrow, ignore_index=True)
+                
+                
+                
+                # plot & formatting
+                sns.violinplot(x ='CENs', y='tubI', data=violin_df, scale="width", color = 'lightskyblue')
+                sns.lineplot  (x ='CENs', y='tubI', data=violin_df, color = 'r')
+                
+                plt.title(condname + '\n' + currcell)
+                plt.xlabel('Centromeres')
+                plt.ylabel('Tubulin intensity')
+                plt.xlim(-0.5, max_CENs + 0.5 )
+                plt.ylim(full_df.tubI.min(),full_df.tubI.max())
+                plt.grid(axis='y')
+                
+                # save figure            
+                violin_name = condname + "_" + currcell
+                figurepath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
+                plt.savefig(figurepath,dpi=600)
+    #            plt.show()
+                plt.clf()

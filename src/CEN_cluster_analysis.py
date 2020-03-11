@@ -70,7 +70,7 @@ if read_and_order:
     
     with open (datapath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
-    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','MTint'])
+    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','tubI'])
 
     Condition,Cell = '',''
     for i,l in enumerate(lines):
@@ -81,16 +81,16 @@ if read_and_order:
         elif l.startswith('**'):
             Cell = l[2:-1]
             CENs = [float(s)   for s in lines[i+1].split(', ')]
-            MTint = [float(s) for s in lines[i+2].split(', ')]
+            tubI = [float(s) for s in lines[i+2].split(', ')]
             
             indata = {'CENs': CENs,
-                      'MTint': MTint,
+                      'tubI': tubI,
                       'Condition': [Condition]*len(CENs),
                       'Cell': [Cell]*len(CENs)}
             
             celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(celldf)                # add cell to dataframe
-    full_df=full_df [['Condition','Cell','CENs','MTint']]    # reorder columns
+    full_df=full_df [['Condition','Cell','CENs','tubI']]    # reorder columns
 
 
 
@@ -102,13 +102,17 @@ if cen_histograms:
     histogram_df = make_histdf(full_df)    
     
     sns.barplot(x="CENs", y="frequency", hue="Condition", data=histogram_df)
+    
+    # plot formatting
     plt.legend(prop={'size': 12})
     plt.title('Centromeres per square')
     plt.xlabel('Centromeres')
     plt.ylabel('Frequency')
+    plt.grid(axis='y')
     
     figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'_hist.png'))
-    plt.savefig(figurepath,dpi=1200)
+#    plt.savefig(figurepath,dpi=1200)
+    plt.show
 
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
@@ -117,5 +121,10 @@ if make_vplots:
     
     for cell in full_df.Cell.unique():
         violin_df = full_df[full_df.Cell == cell]
-        sns.violinplot(x ='CENs', y='MTint', data=violin_df)
+        sns.violinplot(x ='CENs', y='tubI', data=violin_df)
+        
+        # plot formatting
+        plt.xlabel('Centromeres')
+        plt.ylabel('Tubulin intensity')
+        plt.grid(axis='y')
         plt.show()

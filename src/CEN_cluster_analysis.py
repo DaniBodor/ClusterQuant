@@ -12,12 +12,6 @@ small = 'Log_2003091541.txt'
 large = 'Log_2003101536.txt'
 
 
-histogram_exclude_zero = 1
-
-
-startchar_foldername_to_Conditionitionname = 12
-endchar_foldername_to_Conditionitionname = 18
-
 filename = small
 
 import pandas as pd
@@ -39,12 +33,33 @@ datapath = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'results', 'outp
 
 
 
-read_and_order = 0
+read_and_order = 1
 cen_histograms = 1
 
 
-
-
+#%% FUNCTIONS
+def make_histdf(df, MaxLen=40, ex_zeroes=True):
+    '''
+    This function will create a frequency distribution dataframe used for histograms
+    df: dataframe; input data
+    MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
+    ex_zeroes: boolean; exclude zero values from frequency distribution
+    '''
+    if ex_zeroes:
+        df = df[df.CENs != 0]
+    
+    df = (df.groupby(['Condition'])['CENs']
+                     .value_counts(normalize=True)
+                     .rename('frequency')
+                     .reset_index()
+                     .sort_values('CENs'))
+    
+    if MaxLen:
+        long_cond_names = list(df.Condition.unique())
+        short_cond_names = [x[:MaxLen-3]+'...' if len(x)>MaxLen  else x for x in long_cond_names]
+        df.replace(long_cond_names,short_cond_names)
+    
+    return df
 
 
 #%% READ AND ORDER DATA
@@ -53,12 +68,14 @@ if read_and_order:
     
     with open (datapath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
-    df=pd.DataFrame(columns=['Condition','Cell','CENs','MT_I'])
+    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','MT_I'])
 
     Condition,Cell = '',''
     for i,l in enumerate(lines):
         if l.startswith('***'):
-            Condition = l[startchar_foldername_to_Conditionitionname+3:endchar_foldername_to_Conditionitionname+4]
+            Condition = l[3:-1]
+#            if len(Condition) > 40:
+#                Condition = Condition[:35]+'...'
         elif l.startswith('**'):
             Cell = l[2:-1]
             CENs = [float(s)   for s in lines[i+1].split(', ')]
@@ -70,8 +87,8 @@ if read_and_order:
                       'Cell': [Cell]*len(CENs)}
             
             newdf = pd.DataFrame.from_dict(indata)
-            df = df.append(newdf)
-    df=df [['Condition','Cell','CENs','MT_I']]
+            full_df = full_df.append(newdf)
+    full_df=full_df [['Condition','Cell','CENs','MT_I']]
 
 
 
@@ -81,10 +98,10 @@ if read_and_order:
 if cen_histograms:
 
 
-    Condition_gr = df.groupby(['Condition'])
+#    Condition_gr = full_df.groupby(['Condition'])
     
     
-#    sns.countplot(data=df, x='CENs', hue = 'Condition')
+#    sns.countplot(data=full_df, x='CENs', hue = 'Condition')
 #    plt.show()
 
 #    if histogram_exclude_zero:
@@ -92,11 +109,8 @@ if cen_histograms:
 #        
 #    else:
     
-    histogram_df = (df.groupby(['Condition'])['CENs']
-                     .value_counts(normalize=True)
-                     .rename('frequency')
-                     .reset_index()
-                     .sort_values('CENs'))
+
+    histogram_df = make_histdf(full_df)
     sns.barplot(x="CENs", y="frequency", hue="Condition", data=histogram_df)
 
     plt.legend(prop={'size': 12})

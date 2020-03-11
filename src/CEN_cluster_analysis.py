@@ -53,6 +53,7 @@ def make_histdf(df, MaxLen=35, ex_zeroes=True):
                      .rename('frequency')
                      .reset_index()
                      .sort_values('CENs'))
+    df.CENs = df.CENs.astype('int')
     
     if MaxLen:
         long_cond_names = list(df.Condition.unique())

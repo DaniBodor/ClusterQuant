@@ -11,8 +11,10 @@ tiny = 'Log_200310_1543.txt'
 small = 'Log_2003101536.txt'
 large = 'Log_2003091541.txt'
 
+filename = 'Gr16_Wd2.txt'
+filename = 'Gr32_Wd8.txt'
+#filename = tiny
 
-filename = large
 MaxLength = 35
 
 
@@ -115,8 +117,8 @@ if cen_histograms:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'__hist.png'))
-    plt.savefig(figurepath,dpi=1200)
+    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'_hist.png'))
+    plt.savefig(figurepath,dpi=600)
 #    plt.show()
     plt.clf()
 
@@ -124,17 +126,22 @@ if cen_histograms:
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
 if make_vplots:
-    
+    # figure output directory
+    vfigdir = os.path.abspath(os.path.join(outputdir,filename[:-4]))
+    if not os.path.exists(vfigdir):
+        os.mkdir(vfigdir)
+                
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
         
-        
-        if MaxLength:
+        #shorten condition name
+        if MaxLength and len(currcond) > MaxLength:
             condname = currcond[:MaxLength-3]+'...'
         else:
             condname = currcond
             
-        for currcell in cond_df.Cell.unique():
+        for i,currcell in enumerate(cond_df.Cell.unique()):
+            print (i,end=',')
             violin_df = cond_df[cond_df.Cell == currcell]
             sns.violinplot(x ='CENs', y='tubI', data=violin_df)
             
@@ -145,11 +152,10 @@ if make_vplots:
             plt.xlim(right = full_df.CENs.max()+.5 )
             plt.grid(axis='y')
             
-
+            # save figure            
             violin_name = condname + "_" + currcell
-            figurepath = os.path.abspath(os.path.join(outputdir, violin_name  +'_violin.png'))
-    
-            plt.savefig(figurepath,dpi=1200)
+            figurepath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
+            plt.savefig(figurepath,dpi=600)
 #            plt.show()
             plt.clf()
 #            crash

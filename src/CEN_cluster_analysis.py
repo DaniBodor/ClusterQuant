@@ -130,7 +130,9 @@ if make_vplots:
     vfigdir = os.path.abspath(os.path.join(outputdir,filename[:-4]))
     if not os.path.exists(vfigdir):
         os.mkdir(vfigdir)
-                
+    
+    max_CENs = full_df.CENs.max() #for formatting
+
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
         
@@ -143,13 +145,22 @@ if make_vplots:
         for i,currcell in enumerate(cond_df.Cell.unique()):
             print (i,end=',')
             violin_df = cond_df[cond_df.Cell == currcell]
-            sns.violinplot(x ='CENs', y='tubI', data=violin_df)
+
+            # add missing x values
+            for N in range(max_CENs+1):
+                if not N in violin_df.CENs.unique():
+                    newrow = {'Cndition':condname, 'Cell':currcell, 'CENs':N, 'tubI':np.nan}
+                    violin_df = violin_df.append(newrow, ignore_index=True)
             
-            # plot formatting
+            
+            
+            # plot & formatting
+            sns.violinplot(x ='CENs', y='tubI', data=violin_df, scale="count")
+            
             plt.title(condname + '\n' + currcell)
             plt.xlabel('Centromeres')
             plt.ylabel('Tubulin intensity')
-            plt.xlim(right = full_df.CENs.max()+.5 )
+            plt.xlim(right = max_CENs + 0.5 )
             plt.grid(axis='y')
             
             # save figure            
@@ -158,4 +169,3 @@ if make_vplots:
             plt.savefig(figurepath,dpi=600)
 #            plt.show()
             plt.clf()
-#            crash

@@ -107,7 +107,7 @@ if cen_histograms:
     plt.xlabel('Centromeres')
     plt.ylabel('Frequency')
     
-    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'.png'))
+    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'_hist.png'))
     plt.savefig(figurepath,dpi=1200)
 
 

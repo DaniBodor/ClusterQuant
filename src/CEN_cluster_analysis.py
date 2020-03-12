@@ -6,7 +6,6 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 
-
 tiny = 'Log_200310_1543.txt'
 small = 'Log_2003101536.txt'
 large = 'Log_2003091541.txt'

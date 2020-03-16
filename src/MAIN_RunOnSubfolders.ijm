@@ -66,7 +66,7 @@ if(printStartEnd==1){
 	print(non_data_prefix+"End time: " +substring(endtime,lengthOf(endtime)-4));
 }
 print (non_data_prefix+"All done");
-saveAs("Text", OutputPath+"Log_"+timestamp+".txt");
+if (saveLogResults)		saveAs("Text", OutputPath+"Log_"+timestamp+".txt");
 
 
 

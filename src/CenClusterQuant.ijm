@@ -26,6 +26,7 @@ MT_bg_band = 2;			// width of band around grid window to measure background inte
 // Set on or off: (0 is off; >0 is on)
 saveLogOutput = 0;
 ExcludeMTOCs = 1;
+preload_MTOCs = 1;
 DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 
@@ -170,30 +171,39 @@ function makeMask(DNA){
 
 
 function SetExcludeRegions(MTs){
-	// select correct visuals
-	selectImage(workingImage);
-	Stack.setChannel(MTs);
-	run("Select None");
-	run("Set... ", "zoom=300");
-	roiManager("Show All without labels");
-	setTool("polygon");
-	run("Colors...", "foreground=white background=black selection=green");
-
-	// manual intervention
-	waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
-
-	// rename ROIs
-	roiManager("select", 0);
-	roiManager("rename", "analysis region");
-	for (roi = 1; roi < roiManager("count"); roi++) {
-		roiManager("select", roi);
-		roiManager("rename", "MTOC_"+roi);
+	roiManager("reset");
+	ROIdir = out+"ROIs_"+parent+File.separator;
+	ROIfile = ROIdir+ori+".zip";
+	
+	if (preload_MTOCs && File.exists(ROIfile) ){
+		roiManager("open", ROIfile);
+		waitForUser("string");
 	}
-		
-	// save cell outline and MTOC regions
-	ROIoutdir = out+"ROIs_"+parent+File.separator;
-	File.makeDirectory(ROIoutdir);
-	roiManager("save", ROIoutdir+ori+".zip");
+	else{	
+		// select correct visuals
+		selectImage(workingImage);
+		Stack.setChannel(MTs);
+		run("Select None");
+		run("Set... ", "zoom=300");
+		roiManager("Show All without labels");
+		setTool("polygon");
+		run("Colors...", "foreground=white background=black selection=green");
+	
+		// manual intervention
+		waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
+	
+		// rename ROIs
+		roiManager("select", 0);
+		roiManager("rename", "analysis region");
+		for (roi = 1; roi < roiManager("count"); roi++) {
+			roiManager("select", roi);
+			roiManager("rename", "MTOC_"+roi);
+		}
+			
+		// save cell outline and MTOC regions
+		File.makeDirectory(ROIdir);
+		roiManager("save", ROIfile);
+	}
 }
 
 

@@ -77,7 +77,7 @@ else{
 	out = substring(arg, 0, indexOf(arg, "#%#%#%#%"));
 	parent = substring(arg, indexOf(arg, "#%#%#%#%")+8);
 }
-
+subout = out+"Output_"+parent+File.separator;
 
 // Crop off deconvolution edges
 run("Duplicate...", "duplicate");
@@ -172,8 +172,7 @@ function makeMask(DNA){
 
 function SetExcludeRegions(MTs){
 	roiManager("reset");
-	ROIdir = out+"ROIs_"+parent+File.separator;
-	ROIfile = ROIdir+ori+".zip";
+	ROIfile = subout+ori+".zip";
 	
 	if (preload_MTOCs && File.exists(ROIfile) ){
 		roiManager("open", ROIfile);
@@ -201,7 +200,7 @@ function SetExcludeRegions(MTs){
 		}
 			
 		// save cell outline and MTOC regions
-		File.makeDirectory(ROIdir);
+		File.makeDirectory(subout);
 		roiManager("save", ROIfile);
 	}
 }
@@ -222,7 +221,7 @@ function makeGrid(gridsize) {
 
 	// exclude MTOCs from mask 	
 	roiManager("fill");
-	roiManager("reset");	
+	roiManager("reset");
 	
 	// make grid around mask
 	W_offset = (getWidth()  % WindowDisplacement) / 2;  // used to center windows around mask area
@@ -254,6 +253,7 @@ function MeasureClustering(KTch,MTch){
 	run("Find Maxima...", "prominence="+CEN_prominence+" strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
 	spots = getTitle();
+	saveAs("Tiff", subout+ori+"_Maxima.tif");
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);
 

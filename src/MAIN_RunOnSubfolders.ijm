@@ -45,7 +45,7 @@ for (d = 0; d < subdirs.length; d++) {
 					open ( filename );
 					ori = getTitle ();
 					
-					RunCode (ori);
+					RunCode (ori,subdirs [d]);
 					
 					run ("Close All"); 	
 					for (i = 0; i < 3; i++) run("Collect Garbage");
@@ -71,10 +71,14 @@ saveAs("Text", OutputPath+"Log_"+timestamp+".txt");
 
 
 
-function RunCode(IM){
+function RunCode(IM,loc){
 	if (printIMname == 1)	print(non_data_prefix+IM);
 	//fullMacroFileLocation = MacroPath + File.separator + MacroName + ".ijm";
-	runMacro(MacroPath,OutputPath);
+	argument1 = OutputPath;
+	argument2 = File.getName(subdirname);
+	passArgument = argument1 + "#%#%#%#%" + argument2;
+	runMacro(MacroPath,passArgument);
+	
 	
 	//waitForUser(IM);
 	

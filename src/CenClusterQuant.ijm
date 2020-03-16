@@ -1,8 +1,3 @@
-// Set on or off: (0 is off; >0 is on)
-saveLogOutput = 0;
-ExcludeMTOCs = 0;
-DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
-
 // Set channel order
 DNAchannel = 1;
 COROchannel = 2;
@@ -10,26 +5,34 @@ MTchannel = 3;
 KTchannel = 4;
 
 // Set grid parameters
-gridsize = 32;				// size of individual windows to measure
-WindowDisplacement = -4;		// serial displacement of window (0 = gridsize; negative = fraction of gridsize -- see notes below)
+gridsize = 32;					// size of individual windows to measure
+WindowDisplacement = -4;		// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
 // Set DAPI outline parameter
 ThreshType = "Huang";		// potentially use RenyiEntropy?
 GaussSigma = 40;			// currently unused
-DilateCycles = gridsize/2;	// number of dilation cycles (after 1 erode cycle) for DAPI outline
+DilateCycles = gridsize/4;	// number of dilation cycles (after 1 erode cycle) for DAPI outline
 
 // Centromere recognition
 CEN_prominence = 150;		// prominence value of find maxima function
+
+
+
 
 // Set MT background correction
 MTbgCorrMeth = 0;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 MT_bg_band = 2;			// width of band around grid window to measure background intensity in
 
+// Set on or off: (0 is off; >0 is on)
+saveLogOutput = 0;
+ExcludeMTOCs = 1;
+DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 
-/////// WindowDisplacement:
-// if WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes kinda long, 2 is fine)
-// if WindowDisplacement = 0 --> WindowDisplacement = gridsize, perfect non-overlapping grid
+
+/////// WindowDisplacement (rules as indicated above)
+// if WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes kinda long, 2 is ok)
+// if WindowDisplacement = 0 --> WindowDisplacement == gridsize, perfect non-overlapping grid
 // if WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
 if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
 else if (WindowDisplacement < 0){
@@ -37,17 +40,9 @@ else if (WindowDisplacement < 0){
 	WindowDisplacement = (gridsize/division);
 }
 
-// set output folder
-out = getArgument();
-if (out == "")	out = "C:/Users/dani/Dropbox (Personal)/____Recovery/Fiji.app/Custom_Codes/CenClusterQuant/results/output/";
-
-
-
-
-
 
 // These lines are used to run macro on single image (first image in image list, the rest is closed)
-// can be commented out/deleted for final version, but doesn't interfere
+// can be commented out/deleted for final version, but doesn't interfere so no need
 start = getTime();
 selectImage(1);
 rename (File.getName(getTitle()));
@@ -61,6 +56,26 @@ roiManager("reset");
 
 Stack.getDimensions(width, height, channels, slices, frames);
 run("Properties...", "channels=" + channels + " slices=" + slices + " frames=" + frames + " unit=pix pixel_width=1 pixel_height=1 voxel_depth=0");
+
+
+// set output folder
+arg = getArgument();
+if (arg == ""){
+	BaseDir = File.directory();
+	CurrentFolder = File.getName(BaseDir);
+	parent = CurrentFolder;
+	while (CurrentFolder != "CenClusterQuant"){
+		BaseDir = File.getParent(BaseDir);
+		CurrentFolder = File.getName(BaseDir);
+	}
+	out = BaseDir+File.separator+"results" + File.separator +"output" + File.separator;
+
+	
+}
+else{
+	out = substring(arg, 0, indexOf(arg, "#%#%#%#%"));
+	parent = substring(arg, indexOf(arg, "#%#%#%#%")+8);
+}
 
 
 // Crop off deconvolution edges
@@ -165,10 +180,18 @@ function SetExcludeRegions(MTs){
 	run("Colors...", "foreground=white background=black selection=green");
 
 	// manual intervention
-	waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+T.");
+	waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
 
-	// save grid regions
-	ROIoutdir = out+"ROIs"+File.separator;
+	// rename ROIs
+	roiManager("select", 0);
+	roiManager("rename", "analysis region");
+	for (roi = 1; roi < roiManager("count"); roi++) {
+		roiManager("select", roi);
+		roiManager("rename", "MTOC_"+roi);
+	}
+		
+	// save cell outline and MTOC regions
+	ROIoutdir = out+"ROIs_"+parent+File.separator;
 	File.makeDirectory(ROIoutdir);
 	roiManager("save", ROIoutdir+ori+".zip");
 }

@@ -171,12 +171,11 @@ function makeMask(DNA){
 
 
 function SetExcludeRegions(MTs){
-	roiManager("reset");
 	ROIfile = subout+ori+".zip";
 	
 	if (preload_MTOCs && File.exists(ROIfile) ){
+		roiManager("reset");
 		roiManager("open", ROIfile);
-		waitForUser("string");
 	}
 	else{	
 		// select correct visuals

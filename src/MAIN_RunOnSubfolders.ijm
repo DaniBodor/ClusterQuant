@@ -3,7 +3,7 @@ image_identifier="PRJ";	// only files containing this identifier in the file nam
 printDIRname = 1;		// set to 0 or 1 depending on whether you want directory name printed to log
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 printStartEnd = 1;		// set to 0 or 1 depending on whether you want start and end time printed to log
-saveLogResults = 0;		// set to 0 or 1 depending on whether you want to save log results
+saveLogResults = 1;		// set to 0 or 1 depending on whether you want to save log results
 non_data_prefix="##### "// printed in lines that are not data
 
 // set up

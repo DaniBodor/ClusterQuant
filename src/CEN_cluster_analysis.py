@@ -6,13 +6,14 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 
-tiny = 'Log_200310_1543.txt'
-small = 'Log_2003101536.txt'
-large = 'Log_2003091541.txt'
-
-filename = 'Gr16_Wd2.txt'
-filename = 'Gr32_Wd8.txt'
-#filename = tiny
+#tiny = 'Log_200310_1543.txt'
+#small = 'Log_2003101536.txt'
+#large = 'Log_2003091541.txt'
+#
+#filename = 'Gr16_Wd2.txt'
+#filename = 'Gr32_Wd8.txt'
+#filename = "JW12.txt"
+filename = '200420_both.txt'
 
 MaxLength = 35
 

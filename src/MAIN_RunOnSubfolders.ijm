@@ -1,5 +1,5 @@
-MacroName = "CenClusterQuant";
-image_identifier="PRJ";	// only files containing this identifier in the file name will be opened (empty string will include all)
+BaseDirName = "CCQ_Kim";
+image_identifier="";	// only files containing this identifier in the file name will be opened (empty string will include all)
 printDIRname = 1;		// set to 0 or 1 depending on whether you want directory name printed to log
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 printStartEnd = 1;		// set to 0 or 1 depending on whether you want start and end time printed to log
@@ -8,19 +8,19 @@ non_data_prefix="##### "// printed in lines that are not data
 
 // set up
 run ("Close All");	print ("\\Clear");
-dir = getDirectory ("Choose CenClusterQuant base directory");
+dir = getDirectory ("Choose CenClusterQuant data directory");
 
 // recognize own location
 BaseDir = File.getParent(dir);
 CurrentFolder = File.getName(BaseDir);
-while (CurrentFolder != MacroName){
+while (CurrentFolder != BaseDirName){
 	BaseDir = File.getParent(BaseDir);
 	CurrentFolder = File.getName(BaseDir);
 }
 // other paths required
-MacroPath = BaseDir + File.separator  + "src" + File.separator + MacroName + ".ijm";
+MacroPath = BaseDir + File.separator  + "src" + File.separator + BaseDirName + ".ijm";
 OutputPath = BaseDir + File.separator  + "results" + File.separator + "output"+File.separator;
-print(non_data_prefix+"Running", MacroName, "on" , File.getName(dir));
+print(non_data_prefix+"Running", BaseDirName, "on" , File.getName(dir));
 
 timestamp = fetchTimeStamp();
 if(printStartEnd==1)	print(non_data_prefix+"Start time: " +substring(timestamp,lengthOf(timestamp)-4));
@@ -70,10 +70,9 @@ if (saveLogResults)		saveAs("Text", OutputPath+"Log_"+timestamp+".txt");
 
 
 
-
 function RunCode(IM,loc){
 	if (printIMname == 1)	print(non_data_prefix+IM);
-	//fullMacroFileLocation = MacroPath + File.separator + MacroName + ".ijm";
+	//fullMacroFileLocation = MacroPath + File.separator + BaseDirName + ".ijm";
 	argument1 = OutputPath;
 	argument2 = File.getName(subdirname);
 	passArgument = argument1 + "#%#%#%#%" + argument2;

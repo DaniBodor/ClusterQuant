@@ -69,7 +69,7 @@ for (d = 0; d < subdirs.length; d++) {
 	}
 }
 
-
+	
 // print end time if desired
 if (printStartEnd == 1){
 	endtime = fetchTimeStamp();

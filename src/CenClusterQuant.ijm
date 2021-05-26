@@ -177,7 +177,7 @@ function SetExcludeRegions(MTs){
 		roiManager("reset");
 		roiManager("open", ROIfile);
 	}
-	else{	
+	else {	
 		// select correct visuals
 		selectImage(workingImage);
 		Stack.setChannel(MTs);
@@ -252,6 +252,7 @@ function MeasureClustering(KTch,MTch){
 	run("Find Maxima...", "prominence="+CEN_prominence+" strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
 	spots = getTitle();
+	if (!File.isDirectory(subout))	File.makeDirectory(subout);
 	saveAs("Tiff", subout+ori+"_Maxima.tif");
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);

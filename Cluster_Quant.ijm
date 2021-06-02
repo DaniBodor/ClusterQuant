@@ -21,7 +21,7 @@ Dialog.create("Settings");
 	
 	Dialog.addMessage("\n Measurement windows");
 	Dialog.addNumber("Window size", 		16,0,3, "pixels");
-	Dialog.addNumber("Window displacement",  4,0,3, "pixels");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+	Dialog.addNumber("Displacement ratio",	 4,0,3, "1/N displacement per stap");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
 	Dialog.addMessage("\n Spot recognition");
 	Dialog.addNumber("Prominence factor",	150,0,3, "");
@@ -34,7 +34,7 @@ Dialog.create("Settings");
 	Dialog.addMessage("\n Background correction");
 	background_methods = newArray("None", "Global", "Local");
 	Dialog.addChoice("background correction", background_methods, background_methods[2]);
-	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (unused for global or no background correction)");
+	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
 
 	Dialog.addMessage("\n Other settings");
 	Dialog.addCheckbox("Save log", 1);
@@ -58,10 +58,10 @@ Dialog.show();	// retrieve input
 
 	// grid parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
-	winDisplacement =	Dialog.getNumber();;		// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+	winDisplacement =	gridSize / Dialog.getNumber(); // pixel displacement of grid at each step
 	
 	// Centromere recognition
-	Prominence =		Dialog.getNumber();		// prominence value of find maxima function
+	prominence =		Dialog.getNumber();		// prominence value of find maxima function
 		
 	// Nuclear outline
 	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy?
@@ -70,11 +70,11 @@ Dialog.show();	// retrieve input
 
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
-	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in
+	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
 	
 	// Other
 	excludeMTOCs =	Dialog.getCheckbox();
-	preload_MTOCs =	Dialog.getCheckbox();
+	preloadMTOCs =	Dialog.getCheckbox();
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 
@@ -158,7 +158,14 @@ function memoryDump(n){
 
 
 function clusterQuantification(IM){
-	ori = getTitle();
 
-	
+ori = getTitle();
+
+
+
+
 }
+
+
+
+

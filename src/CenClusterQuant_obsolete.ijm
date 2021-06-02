@@ -1,48 +1,38 @@
 
 // Set channel order
-DNAchannel = 1;
-COROchannel = 2;
-MTchannel = 3;
-KTchannel = 4;
+dnaChannel = 1;
+otherChannel = 2;
+correlChanel = 3;
+clusterChannel = 4;
 
 // Set grid parameters
-gridsize = 32;					// size of individual windows to measure
-WindowDisplacement = -4;		// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+gridSize = 32;					// size of individual windows to measure
+winDisplacement = -4;		// pixel displacement of separate windows (0 = gridSize; negative = fraction of gridSize -- see notes below)
 
 // Set DAPI outline parameter
-ThreshType = "Huang";		// potentially use RenyiEntropy?
-GaussSigma = 40;			// currently unused
-DilateCycles = gridsize/4;	// number of dilation cycles (after 1 erode cycle) for DAPI outline
+threshType = "Huang";		// potentially use RenyiEntropy?
+gaussSigma = 40;			// currently unused
+dilateCycles = gridSize/4;	// number of dilation cycles (after 1 erode cycle) for DAPI outline
 
 // Centromere recognition
-CEN_prominence = 150;		// prominence value of find maxima function
+prominence = 150;		// prominence value of find maxima function
 
 
 
 
 // Set MT background correction
-MTbgCorrMeth = 0;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
-MT_bg_band = 2;			// width of band around grid window to measure background intensity in
+bgMeth = 0;		// M background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
+bgBand = 2;			// width of band around grid window to measure background intensity in
 
 // Set on or off: (0 is off; >0 is on)
-saveLogOutput = 0;
-ExcludeMTOCs = 1;
-preload_MTOCs = 1;
-DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
+excludeMTOCs = 1;
+preloadMTOCs = 1;
+deconvCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 
 // Will pick up settings from MAIN
 
 
-/////// WindowDisplacement (rules as indicated above)
-// if WindowDisplacement > 0 --> Displacement value of for rolling window  (1 takes kinda long, 2 is ok)
-// if WindowDisplacement = 0 --> WindowDisplacement == gridsize, perfect non-overlapping grid
-// if WindowDisplacement < 0 --> Absolute value gives the fraction of gridsize as rolling window value. E.g. -2 will give 1/2 gridsize (i.e. 50% overlap) and -4 will give 1/4 gridsize (i.e. 75% overlap)
-if (WindowDisplacement == 0)		WindowDisplacement = gridsize;
-else if (WindowDisplacement < 0){
-	division = abs(WindowDisplacement);
-	WindowDisplacement = (gridsize/division);
-}
 
 
 // These lines are used to run macro on single image (first image in image list, the rest is closed)
@@ -85,18 +75,18 @@ subout = out+"Output_"+parent+File.separator;
 // Crop off deconvolution edges
 run("Duplicate...", "duplicate");
 workingImage = getTitle();
-if (DeconvolutionCrop > 0){
-	makeRectangle(DeconvolutionCrop, DeconvolutionCrop, getWidth-DeconvolutionCrop*2, getHeight-DeconvolutionCrop*2);
+if (deconvCrop > 0){
+	makeRectangle(deconvCrop, deconvCrop, getWidth-deconvCrop*2, getHeight-deconvCrop*2);
 	run("Crop");
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Call sequential functions
-makeMask(DNAchannel);
-if (ExcludeMTOCs > 0) SetExcludeRegions(MTchannel);
-makeGrid(gridsize);
-CEN_and_MT_data = MeasureClustering(KTchannel,MTchannel);
+makeMask(dnaChannel);
+if (excludeMTOCs > 0) SetExcludeRegions(correlChanel);
+makeGrid(gridSize);
+CEN_and_MT_data = MeasureClustering(clusterChannel,correlChanel);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -110,15 +100,13 @@ print("**"+ori);
 Array.print(clusterList);
 Array.print(MTintensity);
 
-if (saveLogOutput){
-	selectWindow("Log");
-	timestamp = fetchTimeStamp();
-	saveAs("Text", out+"Log_"+timestamp+".txt");
-}
+selectWindow("Log");
+timestamp = fetchTimeStamp();
+saveAs("Text", out+"Log_"+timestamp+".txt");
 
 
 
-//print(WindowDisplacement,duration,"sec",roiManager("count"));
+//print(winDisplacement,duration,"sec",roiManager("count"));
 //waitForUser("All done");
 
 
@@ -139,16 +127,16 @@ function makeMask(DNA){
 /*	// de-blur
 	run("Duplicate..."," ");
 	getTitle() = blur;
-	run("Gaussian Blur...", "sigma=" + GaussSigma);
+	run("Gaussian Blur...", "sigma=" + gaussSigma);
 	imageCalculator("Subtract", mask,blur);
 	close(blur);
 */
 
 	// make mask
-	setAutoThreshold(ThreshType+" dark");
+	setAutoThreshold(threshType+" dark");
 	run("Convert to Mask");
 	run("Options...", "iterations=1 count=1 do=Erode");
-	run("Options...", "iterations="+DilateCycles+" count=1 do=Dilate");
+	run("Options...", "iterations="+dilateCycles+" count=1 do=Dilate");
 	run("Options...", "iterations=1 count=1 do=Nothing");
 
 	// find main cell in mask
@@ -176,7 +164,7 @@ function makeMask(DNA){
 function SetExcludeRegions(MTs){
 	ROIfile = subout+ori+".zip";
 	
-	if (preload_MTOCs && File.exists(ROIfile) ){
+	if (preloadMTOCs && File.exists(ROIfile) ){
 		roiManager("reset");
 		roiManager("open", ROIfile);
 	}
@@ -212,7 +200,7 @@ function SetExcludeRegions(MTs){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-function makeGrid(gridsize) {
+function makeGrid(gridSize) {
 	// make cell mask image
 	selectImage(workingImage);
 	newImage("newMask", "8-bit", getWidth, getHeight,1);
@@ -226,14 +214,14 @@ function makeGrid(gridsize) {
 	roiManager("reset");
 	
 	// make grid around mask
-	W_offset = (getWidth()  % WindowDisplacement) / 2;  // used to center windows around mask area
-	H_offset = (getHeight() % WindowDisplacement) / 2;	// used to center windows around mask area
+	W_offset = (getWidth()  % winDisplacement) / 2;  // used to center windows around mask area
+	H_offset = (getHeight() % winDisplacement) / 2;	// used to center windows around mask area
 		
-	for (x = W_offset; x < getWidth()-W_offset; x+=WindowDisplacement) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=WindowDisplacement) {
-			makeRectangle(x, y, gridsize, gridsize);
+	for (x = W_offset; x < getWidth()-W_offset; x+=winDisplacement) {
+		for (y = H_offset; y < getHeight()-H_offset; y+=winDisplacement) {
+			makeRectangle(x, y, gridSize, gridSize);
 			getStatistics(area, mean);
-			if (mean == 0 && area == gridsize*gridsize)		roiManager("add");	// only add regions that are completely contained in mask (and within image borders)
+			if (mean == 0 && area == gridSize*gridSize)		roiManager("add");	// only add regions that are completely contained in mask (and within image borders)
 		}
 	}
 	close(mask);
@@ -252,7 +240,7 @@ function MeasureClustering(KTch,MTch){
 	// find kinetochores
 	selectImage(workingImage);
 	setSlice(KTch);
-	run("Find Maxima...", "prominence="+CEN_prominence+" strict exclude output=[Single Points]");
+	run("Find Maxima...", "prominence="+prominence+" strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
 	spots = getTitle();
 	if (!File.isDirectory(subout))	File.makeDirectory(subout);
@@ -279,12 +267,12 @@ function MeasureClustering(KTch,MTch){
 		getStatistics(rawarea, rawmean);
 		rawdens = rawarea*rawmean;
 
-		if		(MTbgCorrMeth == 0)		bgsignal = 0;			// no background correction
-		else if (MTbgCorrMeth == 1)		bgsignal = MTmedian;	// global background correction
-		else if (MTbgCorrMeth == 2){							// local background correction (in following block)
+		if		(bgMeth == 0)		bgsignal = 0;			// no background correction
+		else if (bgMeth == 1)		bgsignal = MTmedian;	// global background correction
+		else if (bgMeth == 2){							// local background correction (in following block)
 			// measure (signal + background) MT intensity
 			getSelectionBounds(x, y, w, h);
-			makeRectangle(x-MT_bg_band, y-MT_bg_band, w+2*MT_bg_band, h+2*MT_bg_band);	// box for measuring bg
+			makeRectangle(x-bgBand, y-bgBand, w+2*bgBand, h+2*bgBand);	// box for measuring bg
 			getStatistics(largearea, largemean);
 			largedens = largearea*largemean;
 			

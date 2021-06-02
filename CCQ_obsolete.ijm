@@ -123,15 +123,6 @@ function makeMask(DNA){
 	run("Grays");
 	mask = getTitle();
 
-
-/*	// de-blur
-	run("Duplicate..."," ");
-	getTitle() = blur;
-	run("Gaussian Blur...", "sigma=" + gaussSigma);
-	imageCalculator("Subtract", mask,blur);
-	close(blur);
-*/
-
 	// make mask
 	setAutoThreshold(threshType+" dark");
 	run("Convert to Mask");

@@ -36,7 +36,7 @@ deconvCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite).
 
 
 // These lines are used to run macro on single image (first image in image list, the rest is closed)
-// can be commented out/deleted for final version, but doesn't interfere so no need
+// can be commented outdir/deleted for final version, but doesn't interfere so no need
 start = getTime();
 selectImage(1);
 rename (File.getName(getTitle()));
@@ -62,19 +62,19 @@ if (arg == ""){
 		BaseDir = File.getParent(BaseDir);
 		CurrentFolder = File.getName(BaseDir);
 	}
-	out = BaseDir+File.separator+"results" + File.separator +"output" + File.separator;
+	outdir = BaseDir+File.separator+"results" + File.separator +"output" + File.separator;
 
 	
 }
 else{
-	out = substring(arg, 0, indexOf(arg, "#%#%#%#%"));
+	outdir = substring(arg, 0, indexOf(arg, "#%#%#%#%"));
 	parent = substring(arg, indexOf(arg, "#%#%#%#%")+8);
 }
-subout = out+"Output_"+parent+File.separator;
+subout = outdir+"Output_"+parent+File.separator;
 
 // Crop off deconvolution edges
 run("Duplicate...", "duplicate");
-workingImage = getTitle();
+ori = getTitle();
 if (deconvCrop > 0){
 	makeRectangle(deconvCrop, deconvCrop, getWidth-deconvCrop*2, getHeight-deconvCrop*2);
 	run("Crop");
@@ -84,9 +84,9 @@ if (deconvCrop > 0){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Call sequential functions
 makeMask(dnaChannel);
-if (excludeMTOCs > 0) SetExcludeRegions(correlChanel);
+if (excludeMTOCs > 0) setExcludeRegions(correlChanel);
 makeGrid(gridSize);
-CEN_and_MT_data = MeasureClustering(clusterChannel,correlChanel);
+CEN_and_MT_data = measureClustering(clusterChannel,correlChanel);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,14 +102,14 @@ Array.print(MTintensity);
 
 selectWindow("Log");
 timestamp = fetchTimeStamp();
-saveAs("Text", out+"Log_"+timestamp+".txt");
+saveAs("Text", outdir+"Log_"+timestamp+".txt");
 
 
 
 //print(winDisplacement,duration,"sec",roiManager("count"));
 //waitForUser("All done");
 
-
+/// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% carry on from here!
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ saveAs("Text", out+"Log_"+timestamp+".txt");
 
 function makeMask(DNA){
 	// prep images
-	selectImage(workingImage);
+	selectImage(ori);
 	setSlice (DNA);
 	run("Duplicate...", "duplicate channels=" + DNA);
 	run("Grays");
@@ -151,7 +151,7 @@ function makeMask(DNA){
 		roiManager("delete");
 	}
 
-	selectImage(workingImage);
+	selectImage(ori);
 	roiManager("select", 0);
 	run("Crop");
 	close(mask);
@@ -161,7 +161,7 @@ function makeMask(DNA){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-function SetExcludeRegions(MTs){
+function setExcludeRegions(MTs){
 	ROIfile = subout+ori+".zip";
 	
 	if (preloadMTOCs && File.exists(ROIfile) ){
@@ -170,7 +170,7 @@ function SetExcludeRegions(MTs){
 	}
 	else {	
 		// select correct visuals
-		selectImage(workingImage);
+		selectImage(ori);
 		Stack.setChannel(MTs);
 		run("Select None");
 		run("Set... ", "zoom=300");
@@ -202,7 +202,7 @@ function SetExcludeRegions(MTs){
 
 function makeGrid(gridSize) {
 	// make cell mask image
-	selectImage(workingImage);
+	selectImage(ori);
 	newImage("newMask", "8-bit", getWidth, getHeight,1);
 	mask = getTitle();
 	roiManager("select", 0);
@@ -226,7 +226,7 @@ function makeGrid(gridSize) {
 	}
 	close(mask);
 	
-	selectImage(workingImage);
+	selectImage(ori);
 	run("Select None");
 	roiManager("Remove Channel Info");
 	roiManager("Show All without labels");
@@ -236,9 +236,9 @@ function makeGrid(gridSize) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-function MeasureClustering(KTch,MTch){
+function measureClustering(KTch,MTch){
 	// find kinetochores
-	selectImage(workingImage);
+	selectImage(ori);
 	setSlice(KTch);
 	run("Find Maxima...", "prominence="+prominence+" strict exclude output=[Single Points]");
 	roiManager("Show All without labels");
@@ -257,7 +257,7 @@ function MeasureClustering(KTch,MTch){
 		CENs[roi] = getValue("IntDen");	
 	}
 	
-	selectImage(workingImage);
+	selectImage(ori);
 	setSlice(MTch);
 	MTint = newArray(roiCount);
 	MTmedian = getValue("Median");

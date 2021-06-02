@@ -91,6 +91,8 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if ( endsWith (subdirname, File.separator)){	// check that it is a  folder
 		filelist = getFileList (subdirname);
+		subout = outdir + File.getName(subdirname);
+		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 		
 		for (f = 0; f < filelist.length; f++) {		// loop through individual images within condition-folder
@@ -101,6 +103,7 @@ for (d = 0; d < subdirs.length; d++) {
 				// open image and run macro
 				open(filename);
 				if (printIMname == 1)	print(non_data_prefix, getTitle());
+				cropEdges(deconvCrop);
 				clusterQuantification();
 
 				// save output
@@ -150,22 +153,49 @@ function memoryDump(n){
 	print("memory used after " + n + "x memory dump: " + IJ.freeMemory());
 }
 
+function cropEdges(x){
+	if (x > 0) {
+		makeRectangle(deconvCrop, deconvCrop, getWidth-deconvCrop*2, getHeight-deconvCrop*2);
+		run("Crop");
+	}
+}
 
-
-///////////////////////////////////////////////////////
-//////////////////// MAIN FUNCTION ////////////////////
-///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+//////////////////// MAIN FUNCTIONS ////////////////////
+////////////////////////////////////////////////////////
 
 
 function clusterQuantification(IM){
 
-ori = getTitle();
-
-
-
+	// initialize
+	ori = getTitle();
+	setVoxelSize(1, 1, 0, "px");	// unitize pixel size
+	run("Select None");
+	resetMinAndMax;
+	roiManager("reset");
+	
+	// call sequential functions
+	cropEdges(deconvCrop);
+	makeMask(dnaChannel);
+	if (excludeMTOCs > 0) setExcludeRegions(correlChanel);
+	makeGrid(gridSize);
+	CEN_and_MT_data = measureClustering(clusterChannel,correlChanel);
+	
+	
+	// print and save output
+	clusterList = Array.slice(CEN_and_MT_data, 0, CEN_and_MT_data.length/2);
+	MTintensity = Array.slice(CEN_and_MT_data, CEN_and_MT_data.length/2, CEN_and_MT_data.length);
+	
+	finish = getTime();
+	duration = round((finish-start)/1000);
+	print("**", ori);
+	Array.print(clusterList);
+	Array.print(MTintensity);
+	
+	selectWindow("Log");
+	timestamp = fetchTimeStamp();
+	saveAs("Text", outdir + "Log_" + timestamp + ".txt");
 
 }
-
-
 
 

@@ -1,4 +1,4 @@
-/*
+
 // Set channel order
 DNAchannel = 1;
 COROchannel = 2;
@@ -29,7 +29,7 @@ saveLogOutput = 0;
 ExcludeMTOCs = 1;
 preload_MTOCs = 1;
 DeconvolutionCrop = 16;	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
-*/
+
 
 // Will pick up settings from MAIN
 

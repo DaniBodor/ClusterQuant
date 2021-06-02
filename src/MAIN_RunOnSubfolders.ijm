@@ -1,100 +1,133 @@
-BaseDirName = "CenClusterQuant";
-image_identifier="";	// only files containing this identifier in the file name will be opened (empty string will include all)
-printDIRname = 1;		// set to 0 or 1 depending on whether you want directory name printed to log
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
-printStartEnd = 1;		// set to 0 or 1 depending on whether you want start and end time printed to log
-saveLogResults = 1;		// set to 0 or 1 depending on whether you want to save log results
-non_data_prefix="##### "// printed in lines that are not data
+non_data_prefix="##### "// printed in lines that are not data, will be ignored by python code
 
-// set up
 run ("Close All");
 print ("\\Clear");
-dir = getDirectory ("Choose CenClusterQuant data directory");
-subdirs = getFileList (dir);
 
-// recognize own location
-BaseDir = File.getParent(dir);
-CurrentFolder = File.getName(BaseDir);
-while (CurrentFolder != BaseDirName){
-	BaseDir = File.getParent(BaseDir);
-	CurrentFolder = File.getName(BaseDir);
-}
 
-// other paths required
-MacroPath = BaseDir + File.separator  + "src" + File.separator + BaseDirName + ".ijm";
-OutputPath = BaseDir + File.separator  + "results" + File.separator + "output"+File.separator;
-print(non_data_prefix+"Running", BaseDirName, "on" , File.getName(dir));
+// set up
+Dialog.create("Settings");
+	Dialog.addMessage(" Select main data folder");
+	Dialog.addMessage(" Main data folder should contain one subfolder with data per experimental condition");
+	Dialog.addDirectory("Main folder", "");
+	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
+	Dialog.addString("Output folder name","_Results");
+	
+	Dialog.addMessage("\n Set channel order");
+	Dialog.addNumber("Clustering channel",	4,0,3, "channel to measuring degree of clustering"); // former: Kinetochore channel
+	Dialog.addNumber("Correlation channel",	3,0,3, "channel to correlate degree of clustering with; use 0 to skip this step"); // former: Microtubule channel
+	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); // 
+	Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
+	
+	Dialog.addMessage("\n Measurement windows");
+	Dialog.addNumber("Window size", 		16,0,3, "pixels");
+	Dialog.addNumber("Window displacement",  4,0,3, "pixels");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
-// fetch time
+	Dialog.addMessage("\n Spot recognition");
+	Dialog.addNumber("Prominence factor",	150,0,3, "");
+	
+	Dialog.addMessage("\n Nucleus outlining");
+	Dialog.addChoice("DNA thresholding method", getList("threshold.methods"), "Huang");		// potentially use RenyiEntropy?
+	Dialog.addNumber("Gaussian blur",		40,0,3, "pixels");
+	Dialog.addNumber("Dilate cycles",		 4,0,3, "pixels (after 1 erode cycle)");
+	
+	Dialog.addMessage("\n Background correction");
+	background_methods = newArray("None", "Global", "Local");
+	Dialog.addChoice("background correction", background_methods, background_methods[2]);
+	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (unused for global or no background correction)");
+
+	Dialog.addMessage("\n Other settings");
+	Dialog.addCheckbox("Save log", 1);
+	Dialog.addCheckbox("Exclude regions", 1);
+	Dialog.addCheckbox("Load excluded regions", 1);
+	Dialog.addNumber("Crop deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
+
+Dialog.show();	// retrieve input
+	// input/output
+	dir = Dialog.getString();
+	imageIdentifier = Dialog.getString();
+	outdir = dir + getString("prompt", "default") + File.separator;
+	subdirs = getFileList (dir);
+	File.makeDirectory(outdir);
+
+	// channel order
+	clusterChannel = 	Dialog.getNumber(); // former KTchannel
+	correlChanel =		Dialog.getNumber(); // former MTchannel
+	dnaChannel =		Dialog.getNumber(); // former DNAchannel
+	otherChannel =		Dialog.getNumber(); // former COROchannel
+
+	// grid parameters
+	gridSize =			Dialog.getNumber();	// size of individual windows to measure
+	winDisplacement =	Dialog.getNumber();;		// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+	
+	// Centromere recognition
+	Prominence =		Dialog.getNumber();		// prominence value of find maxima function
+		
+	// Nuclear outline
+	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy?
+	gaussSigma = 	Dialog.getNumber();	// currently unused
+	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline
+
+	// Background correction
+	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
+	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in
+	
+	// Other
+	excludeMTOCs =	Dialog.getCheckbox();
+	preload_MTOCs =	Dialog.getCheckbox();
+	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
+
+
+
+// print initial info
+print(non_data_prefix, "Current file:", File.getName(dir));
 timestamp = fetchTimeStamp();
-if(printStartEnd==1)	print(non_data_prefix+"Start time: " +substring(timestamp,lengthOf(timestamp)-4));
+print(non_data_prefix, "Start time:", substring(timestamp,lengthOf(timestamp)-4));
 
-
-// lots of loops and conditions to find correct files in correct folders
 
 // loop through individual conditions within base data folder
 for (d = 0; d < subdirs.length; d++) {
-	subdirname = dir + subdirs [d];
+	subdirname = dir + subdirs [d];		
 
-	// check that it is indeed  folder
-	if ( endsWith (subdirname, "/")){
+	if ( endsWith (subdirname, File.separator)){	// check that it is a  folder
 		filelist = getFileList (subdirname);
-		if (printDIRname == 1)	print("***" + File.getName(subdirname));
+		print("***" + File.getName(subdirname));
 		
-		// loop through individual images within condition-folder
-		for (f = 0; f < filelist.length; f++) {
-		//for (f = 0; f < 5; f++) {		// use for testing on few images
+		for (f = 0; f < filelist.length; f++) {		// loop through individual images within condition-folder
 			filename = subdirname + filelist [f];
 
-			// check that file is an image (*.tif or *.dv) abd that it contains the identifier set at the top
-			if ( endsWith (filename, ".tif") || endsWith (filename, ".dv") ){
-				if (indexOf(filelist [f] , image_identifier) >= 0 ){
-					// correct files were found
-					
-					// open image and run macro
-					open(filename);
-					ori = getTitle();
-					RunCode(ori);
+			if ( indexof(filename.toLowerCase, imageIdentifier) >= 0 ){	// check for identifier
+				
+				// open image and run macro
+				open(filename);
+				if (printIMname == 1)	print(non_data_prefix, getTitle());
+				clusterQuantification();
 
-					// save output
-					selectWindow("Log");
-					if (saveLogResults)		saveAs("Text", OutputPath+"Log_"+timestamp+".txt");
+				// save output
+				selectWindow("Log");
+				saveAs("Text", outdir + "Log_" + timestamp + ".txt");
 
-					// close and dump memory
-					run ("Close All"); 	
-					memoryDump(3);
-				}
+				// close and dump memory
+				run ("Close All"); 	
+				memoryDump(3);
 			}
 		}
 	}
 }
 
 
-// print end time if desired
-if (printStartEnd == 1){
-	endtime = fetchTimeStamp();
-	print(non_data_prefix+"End time: " + substring(endtime, lengthOf(endtime)-4) );
-}
-
-print (non_data_prefix + "All done");
-if (saveLogResults)		saveAs("Text", OutputPath + "Log_" + timestamp + ".txt");
+// print end time and save log
+endtime = fetchTimeStamp();
+print(non_data_prefix, "End time:", substring(endtime, lengthOf(endtime)-4) );
+print (non_data_prefix, "All done");
+saveAs("Text", outdir + "Log_" + timestamp + ".txt");
 
 
 
-function RunCode(IM){
-	if (printIMname == 1)	print(non_data_prefix+IM);
-	argument1 = OutputPath;
-	argument2 = File.getName(subdirname);
-	passArgument = argument1 + "#%#%#%#%" + argument2;
-	runMacro(MacroPath, passArgument);
-		
-	//waitForUser(IM);
-}
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+//////////////////// MINOR FUNCTIONS ////////////////////
+/////////////////////////////////////////////////////////
 
 function fetchTimeStamp(){
 	// allows for nice formatting of datetime
@@ -118,67 +151,14 @@ function memoryDump(n){
 }
 
 
-function settingsDialog(){
-	Dialog.create("Settings");
-	
-	Dialog.addMessage(" Set channel order");
-	// **** I need to rename these their function
-	Dialog.addNumber("DNA channel", 		 1,0,3, "");
-	Dialog.addNumber("Corona channel", 		 2,0,3, "");
-	Dialog.addNumber("Microtubule channel",  3,0,3, "");
-	Dialog.addNumber("Kinetochore channel",  4,0,3, "");
-	
-	Dialog.addMessage("\n Measurement windows");
-	Dialog.addNumber("Window size", 			16,0,3, "pixels");
-	Dialog.addNumber("Window displacement",  4,0,3, "pixels");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
-	Dialog.addMessage("\n Centromere recognition");
-	Dialog.addNumber("Centromere prominence",	150,0,3, "");
-	
-	Dialog.addMessage("\n Nucleus outlining");
-	Dialog.addChoice("DNA thresholding method", getList("threshold.methods"), "Huang");		// potentially use RenyiEntropy?
-	Dialog.addNumber("Gaussian blur",		40,0,3, "pixels");
-	Dialog.addNumber("Dilate cycles",		 4,0,3, "pixels (after 1 erode cycle)");
-	
-	Dialog.addMessage("\n Background correction");
-	background_methods = newArray("None", "Global", "Local");
-	Dialog.addChoice("background correction", background_methods, background_methods[2]);
-	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (unused for global or no background correction)");
+///////////////////////////////////////////////////////
+//////////////////// MAIN FUNCTION ////////////////////
+///////////////////////////////////////////////////////
 
-	Dialog.addMessage("\n Other settings");
-	Dialog.addCheckbox("Save log", 1);
-	Dialog.addCheckbox("Exclude regions", 1);
-	Dialog.addCheckbox("Load excluded regions", 1);
-	Dialog.addNumber("Crop deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
 
-	// retrieve input
-	Dialog.show();
+function clusterQuantification(IM){
+	ori = getTitle();
 
-	// channel order
-	DNAchannel =	Dialog.getNumber();
-	COROchannel =	Dialog.getNumber();
-	MTchannel =		Dialog.getNumber();
-	KTchannel = 	Dialog.getNumber();
 	
-	// grid parameters
-	gridsize =		Dialog.getNumber();	// size of individual windows to measure
-	WindowDisplacement = Dialog.getNumber();;		// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
-	
-	// Centromere recognition
-	CEN_prominence = Dialog.getNumber();		// prominence value of find maxima function
-		
-	// Nuclear outline
-	ThreshType = 	Dialog.getChoice();		// potentially use RenyiEntropy?
-	GaussSigma = 	Dialog.getNumber();	// currently unused
-	DilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline
-
-	// Background correction
-	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
-	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in
-	
-	// Other
-	saveLogOutput =	Dialog.getCheckbox();
-	ExcludeMTOCs =	Dialog.getCheckbox();
-	preload_MTOCs =	Dialog.getCheckbox();
-	DeconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 }

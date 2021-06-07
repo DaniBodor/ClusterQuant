@@ -1,4 +1,4 @@
-main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\raw";
+main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\test_data";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 time_printing = "time_printing";
@@ -6,6 +6,7 @@ file_naming = "file_naming";
 starttime = fetchTimeStamp(file_naming);
 makeDebugTextWindow = 0;
 debugWindow = "Debugging";
+start = getTime();
 
 run ("Close All");
 print ("\\Clear");
@@ -59,7 +60,6 @@ Dialog.createNonBlocking("ClusterQuant settings");
 
 	Dialog.addMessage("\n OTHER");
 	Dialog.setInsets(0, 20, 0);
-	Dialog.addCheckbox("Save log", 1);
 	Dialog.addCheckbox("Exclude regions", 1);
 	Dialog.addCheckbox("Load previously excluded regions", 1);
 	Dialog.addNumber("Crop deconvolution border", 	 0,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
@@ -144,7 +144,10 @@ for (d = 0; d < subdirs.length; d++) {
 
 // print end time and save log
 print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
-print (nondataprefix, "All done");
+print(nondataprefix, "Total duration:", round((getTime() - start)/100)/10, "seconds");
+print(nondataprefix, "All done");
+
+selectWindow("Log");
 saveAs("Text", outdir + "Log_" + starttime + ".txt");
 
 

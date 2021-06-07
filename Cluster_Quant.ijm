@@ -37,7 +37,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addMessage("\n SET CHANNEL ORDER");
 	Dialog.addNumber("Clustering channel",	4,0,3, "channel to measuring degree of clustering"); // former: Kinetochore channel
 	Dialog.addNumber("Correlation channel",	3,0,3, "channel to correlate degree of clustering with; use 0 to skip this step"); // former: Microtubule channel
-	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); //
+	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); // former: DNA channel
 	Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
 
 	Dialog.addMessage("\n MEASRUEMENT WINDOWS");

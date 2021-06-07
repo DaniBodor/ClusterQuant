@@ -1,9 +1,8 @@
 main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\raw";
-printIMname = 1;		// set to 0 or 1 depending on whether you want image name printed to log
-non_data_prefix="##### "// printed in lines that are not data, will be ignored by python code
+nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
+printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 time_printing = "time_printing";
 file_naming = "file_naming";
-start = getTime();
 starttime = fetchTimeStamp(file_naming);
 makeDebugTextWindow = 0;
 debugWindow = "Debugging";
@@ -63,7 +62,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addCheckbox("Save log", 1);
 	Dialog.addCheckbox("Exclude regions", 1);
 	Dialog.addCheckbox("Load previously excluded regions", 1);
-	Dialog.addNumber("Crop deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
+	Dialog.addNumber("Crop deconvolution border", 	 0,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
 
 Dialog.show();	// retrieve input
 	// input/output
@@ -104,8 +103,8 @@ Dialog.show();	// retrieve input
 
 
 // print initial info
-print(non_data_prefix, "Main folder:", File.getName(dir));
-print(non_data_prefix, "Start time:", fetchTimeStamp(time_printing) );
+print(nondataprefix, "Main folder:", File.getName(dir));
+print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
 
 
 // loop through individual conditions within base data folder
@@ -114,7 +113,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
-		subout = outdir + "output_" + File.getName(subdirname);
+		subout = outdir + "output_" + File.getName(subdirname) + File.separator;
 		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 
@@ -126,7 +125,7 @@ for (d = 0; d < subdirs.length; d++) {
 				// open image and run macro
 				open(filename);
 				rename(filelist[f]);
-				if (printIMname == 1)	print(non_data_prefix, getTitle());
+				if (printIMname == 1)	print(nondataprefix, getTitle());
 				cropEdges(deconvCrop);
 				clusterQuantification();
 
@@ -144,8 +143,8 @@ for (d = 0; d < subdirs.length; d++) {
 
 
 // print end time and save log
-print(non_data_prefix, "End time:", fetchTimeStamp(time_printing) );
-print (non_data_prefix, "All done");
+print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
+print (nondataprefix, "All done");
 saveAs("Text", outdir + "Log_" + starttime + ".txt");
 
 
@@ -171,9 +170,9 @@ function fetchTimeStamp(format){
 
 
 function memoryDump(n){
-	print("memory used prior to memory dump: " + IJ.freeMemory());
+	//print("memory used prior to memory dump: " + IJ.freeMemory());
 	for (i = 0; i < n; i++) run("Collect Garbage");
-	print("memory used after " + n + "x memory dump: " + IJ.freeMemory());
+	//print(nondataprefix, "memory used after " + n + "x memory dump: " + IJ.freeMemory());
 }
 
 function cropEdges(x){
@@ -195,6 +194,8 @@ function getLocalBackground(){
 	rawDens = rawArea * rawMean;
 	bgArea	= largeArea - rawArea;
 	bgSignal= (largeDens - rawDens) / bgArea;
+
+	//print(largeArea, largeMean, rawDens, bgArea, bgSignal);
 
 	return bgSignal;
 }
@@ -224,18 +225,19 @@ function clusterQuantification(){
 		// step 3: make grid
 		makeGrid();
 		// step 4: make measurements
+		before = getTime();
 		allData = measureClustering();
-
+		duration = round((getTime() - before)/100)/10;
+		
 	// retrieve separate arrays from allData
 	clusterList = Array.slice(allData, 0, allData.length/2);
 	intensList	= Array.slice(allData, allData.length/2, allData.length);
 
 	// print info
-	finish = getTime();
-	duration = round((finish-start)/1000);
 	print("**", ori);
 	Array.print(clusterList);
-	Array.print(MTintensity);
+	Array.print(intensList);
+	//print(nondataprefix, "duration:", duration, "sec");
 
 	// save log
 	selectWindow("Log");
@@ -275,7 +277,6 @@ function makeMask(){
 	selectImage(ori);
 	roiManager("select", 0);
 	roiManager("rename", "Analysis region");
-//	run("Crop");	// ############### why crop???
 }
 
 
@@ -292,7 +293,8 @@ function setExcludeRegions(){
 		selectImage(ori);
 		Stack.setChannel(correlChanel);
 		run("Select None");
-		run("Set... ", "zoom=300");
+		run("Set... ", "zoom=150");
+		setLocation(2000, 50);
 		roiManager("Show All without labels");
 		setTool("polygon");
 
@@ -322,7 +324,7 @@ function makeGrid() {
 	roiManager("fill");			// makes exclude regions white
 	roiManager("reset");
 
-	// make grid around mask (used to center windows around mask area)	//######## what did i mean by this???
+	// make grid around mask (used to center windows around mask area)	//######## not sure what i meant by this comment, but it works...
 	W_offset = (getWidth()  % winDisplacement) / 2;
 	H_offset = (getHeight() % winDisplacement) / 2;
 
@@ -349,11 +351,12 @@ function measureClustering(){
 	selectImage(ori);
 	setSlice(clusterChannel);
 	run("Find Maxima...", "prominence=&prominence strict exclude output=[Single Points]");
+	run("Divide...", "value=255");
+	setMinAndMax(0, 1);
 	roiManager("Show All without labels");
 
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
-	run("Divide...", "value=255");
-	setMinAndMax(0, 1);
+	spotIM = getTitle();
 
 	// get global bg
 	bgSignal = 0;	// for no background correction
@@ -362,18 +365,20 @@ function measureClustering(){
 		bgSignal = getValue("Median");
 	}
 
-	// loop through windows: count spots & measure correl channel intensity
+	// count number of CEN spots
 	Spots = newArray();
 	Intensities = newArray();
+	selectImage(spotIM);
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
-
-		// count number of CEN spots
-		selectImage(ori);
-		setSlice(clusterChannel);
 		Spots[roi] = getValue("IntDen");
+	}
 
+	// Measure correlation (separate loop from above saves a lot of time!)
+	selectImage(ori);
+	for (roi = 0; roi < roiManager("count"); roi++) {
 		// measure correl channel
+		roiManager("select",roi);
 		setSlice(correlChanel);
 		getStatistics(rawArea, rawMean);
 		if (bgMeth == background_methods[2])	bgSignal = getLocalBackground();	// local bg correction

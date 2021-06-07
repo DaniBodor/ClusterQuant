@@ -1,15 +1,29 @@
-printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
+main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\raw";
+printIMname = 1;		// set to 0 or 1 depending on whether you want image name printed to log
 non_data_prefix="##### "// printed in lines that are not data, will be ignored by python code
-starttime = fetchTimeStamp();
 time_printing = "time_printing";
 file_naming = "file_naming";
+start = getTime();
+starttime = fetchTimeStamp(file_naming);
+makeDebugTextWindow = 0;
+debugWindow = "Debugging";
 
 run ("Close All");
 print ("\\Clear");
 roiManager("reset");
 run("Colors...", "foreground=white background=black");
+close("Debug");
+if (isOpen(debugWindow)){
+	selectWindow(debugWindow);
+	run("Close");
+}
 
-main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\raw"
+
+
+
+//run("Text Window...", "name=" + debugWindow + " width=80 height=24 menu");		setLocation(3200, 140);		debugWindow = "[" + debugWindow + "]";
+
+
 
 
 // set up dialog
@@ -55,6 +69,7 @@ Dialog.show();	// retrieve input
 	// input/output
 	dir = Dialog.getString();
 	imageIdentifier = Dialog.getString();
+	imageIdentifier = imageIdentifier.toLowerCase;
 	outdir = dir + Dialog.getString() + File.separator;
 	subdirs = getFileList (dir);
 	File.makeDirectory(outdir);
@@ -82,14 +97,14 @@ Dialog.show();	// retrieve input
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
 
 	// Other
-	excludeMTOCs =	Dialog.getCheckbox();
-	preloadMTOCs =	Dialog.getCheckbox();
+	excludeRegions =	Dialog.getCheckbox();
+	preloadRegions =	Dialog.getCheckbox();
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 
 
 // print initial info
-print(non_data_prefix, "Current file:", File.getName(dir));
+print(non_data_prefix, "Main folder:", File.getName(dir));
 print(non_data_prefix, "Start time:", fetchTimeStamp(time_printing) );
 
 
@@ -99,7 +114,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
-		subout = outdir + File.getName(subdirname);
+		subout = outdir + "output_" + File.getName(subdirname);
 		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 
@@ -110,6 +125,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 				// open image and run macro
 				open(filename);
+				rename(filelist[f]);
 				if (printIMname == 1)	print(non_data_prefix, getTitle());
 				cropEdges(deconvCrop);
 				clusterQuantification();
@@ -188,7 +204,7 @@ function getLocalBackground(){
 ////////////////////////////////////////////////////////
 
 
-function clusterQuantification(IM){
+function clusterQuantification(){
 
 	// initialize
 	ori = getTitle();
@@ -199,11 +215,16 @@ function clusterQuantification(IM){
 	cropEdges(deconvCrop);
 	ROIfile = subout + ori + ".zip";
 
-	// call sequential functions
-	makeMask();								// step 1
-	if (excludeMTOCs) setExcludeRegions();	// step 2
-	makeGrid();								// step 3
-	allData = measureClustering();			// step 4
+	// run sequential steps:
+		// step 1: get DAPI outline
+		if(dnaChannel > 0) makeMask();
+		// step 2: exclude regions
+		if (excludeRegions) 			setExcludeRegions();
+		else if (roiManager("count")>0) roiManager("save", ROIfile);
+		// step 3: make grid
+		makeGrid();
+		// step 4: make measurements
+		allData = measureClustering();
 
 	// retrieve separate arrays from allData
 	clusterList = Array.slice(allData, 0, allData.length/2);
@@ -218,7 +239,7 @@ function clusterQuantification(IM){
 
 	// save log
 	selectWindow("Log");
-	saveAs("Text", outdir + "Log_" + fetchTimeStamp(file_naming) + ".txt");
+	saveAs("Text", outdir + "Log_" + starttime + ".txt");
 }
 
 
@@ -254,7 +275,6 @@ function makeMask(){
 	selectImage(ori);
 	roiManager("select", 0);
 	roiManager("rename", "Analysis region");
-	roiManager("save", ROIfile);
 //	run("Crop");	// ############### why crop???
 }
 
@@ -263,7 +283,7 @@ function makeMask(){
 function setExcludeRegions(){
 
 	// load existing ROI files if they exist
-	if (preloadMTOCs && File.exists(ROIfile) ){
+	if (preloadRegions && File.exists(ROIfile) ){
 		roiManager("reset");
 		roiManager("open", ROIfile);
 	}
@@ -349,6 +369,7 @@ function measureClustering(){
 		roiManager("select",roi);
 
 		// count number of CEN spots
+		selectImage(ori);
 		setSlice(clusterChannel);
 		Spots[roi] = getValue("IntDen");
 

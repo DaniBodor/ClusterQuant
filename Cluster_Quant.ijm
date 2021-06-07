@@ -1,17 +1,22 @@
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 non_data_prefix="##### "// printed in lines that are not data, will be ignored by python code
+starttime = fetchTimeStamp();
+time_printing = "time_printing";
+file_naming = "file_naming";
 
 run ("Close All");
 print ("\\Clear");
 roiManager("reset");
 run("Colors...", "foreground=white background=black");
 
+main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\raw"
+
 
 // set up dialog
 Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addMessage(" SELECT DATA FOLDER");
 	Dialog.addMessage(" Main data folder should contain one subfolder with data per experimental condition");
-	Dialog.addDirectory("Main folder", "");
+	Dialog.addDirectory("Main folder", main_data_default);
 	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
 	Dialog.addString("Output folder name","_Results");
 
@@ -50,7 +55,7 @@ Dialog.show();	// retrieve input
 	// input/output
 	dir = Dialog.getString();
 	imageIdentifier = Dialog.getString();
-	outdir = dir + getString("prompt", "default") + File.separator;
+	outdir = dir + Dialog.getString() + File.separator;
 	subdirs = getFileList (dir);
 	File.makeDirectory(outdir);
 
@@ -85,15 +90,14 @@ Dialog.show();	// retrieve input
 
 // print initial info
 print(non_data_prefix, "Current file:", File.getName(dir));
-timestamp = fetchTimeStamp();
-print(non_data_prefix, "Start time:", substring(timestamp,lengthOf(timestamp)-4));
+print(non_data_prefix, "Start time:", fetchTimeStamp(time_printing) );
 
 
 // loop through individual conditions within base data folder
 for (d = 0; d < subdirs.length; d++) {
 	subdirname = dir + subdirs [d];
 
-	if ( endsWith (subdirname, File.separator)){	// check that it is a  folder
+	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
 		subout = outdir + File.getName(subdirname);
 		File.makeDirectory(subout);
@@ -102,7 +106,7 @@ for (d = 0; d < subdirs.length; d++) {
 		for (f = 0; f < filelist.length; f++) {		// loop through individual images within condition-folder
 			filename = subdirname + filelist [f];
 
-			if ( indexof(filename.toLowerCase, imageIdentifier) >= 0 ){	// check for identifier
+			if ( indexOf(filename.toLowerCase, imageIdentifier) >= 0 ){	// check for identifier
 
 				// open image and run macro
 				open(filename);
@@ -112,7 +116,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 				// save output
 				selectWindow("Log");
-				saveAs("Text", outdir + "Log_" + timestamp + ".txt");
+				saveAs("Text", outdir + "Log_" + starttime + ".txt");
 
 				// close and dump memory
 				run ("Close All");
@@ -124,10 +128,9 @@ for (d = 0; d < subdirs.length; d++) {
 
 
 // print end time and save log
-endtime = fetchTimeStamp();
-print(non_data_prefix, "End time:", substring(endtime, lengthOf(endtime)-4) );
+print(non_data_prefix, "End time:", fetchTimeStamp(time_printing) );
 print (non_data_prefix, "All done");
-saveAs("Text", outdir + "Log_" + timestamp + ".txt");
+saveAs("Text", outdir + "Log_" + starttime + ".txt");
 
 
 
@@ -136,7 +139,7 @@ saveAs("Text", outdir + "Log_" + timestamp + ".txt");
 //////////////////// MINOR FUNCTIONS ////////////////////
 /////////////////////////////////////////////////////////
 
-function fetchTimeStamp(){
+function fetchTimeStamp(format){
 	// allows for nice formatting of datetime
 	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 
@@ -144,10 +147,10 @@ function fetchTimeStamp(){
 	year = substring(d2s(year,0),2);
 	DateString = year + IJ.pad(month+1,2) + IJ.pad(dayOfMonth,2);
 	TimeString = IJ.pad(hour,2) + IJ.pad(minute,2);
-
-	// concatenate and return
 	DateTime = DateString+"_"+TimeString;
-	return DateTime;
+	
+	if (format == time_printing)	return IJ.pad(hour,2) + ":" + IJ.pad(minute,2);
+	if (format == file_naming)	return DateTime;
 }
 
 
@@ -214,9 +217,8 @@ function clusterQuantification(IM){
 	Array.print(MTintensity);
 
 	// save log
-	timestamp = fetchTimeStamp();
 	selectWindow("Log");
-	saveAs("Text", outdir + "Log_" + timestamp + ".txt");
+	saveAs("Text", outdir + "Log_" + fetchTimeStamp(file_naming) + ".txt");
 }
 
 

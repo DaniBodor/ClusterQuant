@@ -8,40 +8,42 @@ run("Colors...", "foreground=white background=black");
 
 
 // set up dialog
-Dialog.create("Settings");
-	Dialog.addMessage(" Select main data folder");
+Dialog.createNonBlocking("ClusterQuant settings");
+	Dialog.addMessage(" SELECT DATA FOLDER");
 	Dialog.addMessage(" Main data folder should contain one subfolder with data per experimental condition");
 	Dialog.addDirectory("Main folder", "");
 	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
 	Dialog.addString("Output folder name","_Results");
 
-	Dialog.addMessage("\n Set channel order");
+	Dialog.addMessage("\n SET CHANNEL ORDER");
 	Dialog.addNumber("Clustering channel",	4,0,3, "channel to measuring degree of clustering"); // former: Kinetochore channel
 	Dialog.addNumber("Correlation channel",	3,0,3, "channel to correlate degree of clustering with; use 0 to skip this step"); // former: Microtubule channel
 	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); //
 	Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
 
-	Dialog.addMessage("\n Measurement windows");
+	Dialog.addMessage("\n MEASRUEMENT WINDOWS");
 	Dialog.addNumber("Window size", 		16,0,3, "pixels");
-	Dialog.addNumber("Displacement ratio",	 4,0,3, "1/N displacement per stap");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+	Dialog.addNumber("Displacement ratio",	 4,0,3, "Window size / N");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
 
-	Dialog.addMessage("\n Spot recognition");
+	Dialog.addMessage("\n SPOT RECOGNITION");
 	Dialog.addNumber("Prominence factor",	150,0,3, "");
 
-	Dialog.addMessage("\n Nucleus outlining");
-	Dialog.addChoice("DNA thresholding method", getList("threshold.methods"), "Huang");		// potentially use RenyiEntropy?
+	Dialog.addMessage("\n NUCLEUS OUTLINING");
+	T_options = getList("threshold.methods");
+	Dialog.addChoice("DNA thresholding method", T_options, "Huang");		// potentially use RenyiEntropy?
 	Dialog.addNumber("Gaussian blur",		40,0,3, "pixels");
 	Dialog.addNumber("Dilate cycles",		 4,0,3, "pixels (after 1 erode cycle)");
 
-	Dialog.addMessage("\n Background correction");
+	Dialog.addMessage("\n BACKGROUND CORRECTION");
 	background_methods = newArray("None", "Global", "Local");
-	Dialog.addChoice("background correction", background_methods, background_methods[2]);
+	Dialog.addChoice("background correction method", background_methods, background_methods[2]);
 	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
 
-	Dialog.addMessage("\n Other settings");
+	Dialog.addMessage("\n OTHER");
+	Dialog.setInsets(0, 20, 0);
 	Dialog.addCheckbox("Save log", 1);
 	Dialog.addCheckbox("Exclude regions", 1);
-	Dialog.addCheckbox("Load excluded regions", 1);
+	Dialog.addCheckbox("Load previously excluded regions", 1);
 	Dialog.addNumber("Crop deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
 
 Dialog.show();	// retrieve input

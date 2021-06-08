@@ -129,10 +129,6 @@ for (d = 0; d < subdirs.length; d++) {
 				cropEdges(deconvCrop);
 				clusterQuantification();
 
-				// save output
-				selectWindow("Log");
-				saveAs("Text", outdir + "Log_" + starttime + ".txt");
-
 				// close and dump memory
 				run ("Close All");
 				memoryDump(3);
@@ -147,8 +143,7 @@ print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
 print(nondataprefix, "Total duration:", round((getTime() - start)/100)/10, "seconds");
 print(nondataprefix, "All done");
 
-selectWindow("Log");
-saveAs("Text", outdir + "Log_" + starttime + ".txt");
+saveLog();
 
 
 
@@ -203,6 +198,11 @@ function getLocalBackground(){
 	return bgSignal;
 }
 
+function saveLog(){
+	selectWindow("Log");
+	saveAs("Text", outdir + "Log_" + starttime + ".csv");
+}
+
 ////////////////////////////////////////////////////////
 //////////////////// MAIN FUNCTIONS ////////////////////
 ////////////////////////////////////////////////////////
@@ -241,10 +241,8 @@ function clusterQuantification(){
 	Array.print(clusterList);
 	Array.print(intensList);
 	//print(nondataprefix, "duration:", duration, "sec");
-
-	// save log
-	selectWindow("Log");
-	saveAs("Text", outdir + "Log_" + starttime + ".txt");
+	
+	saveLog();
 }
 
 

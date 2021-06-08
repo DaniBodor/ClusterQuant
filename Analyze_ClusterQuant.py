@@ -6,18 +6,16 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 
-#tiny = 'Log_200310_1543.txt'
-#small = 'Log_2003101536.txt'
-#large = 'Log_2003091541.txt'
-#
-#filename = 'Gr16_Wd2.txt'
-#filename = 'Gr32_Wd8.txt'
-#filename = "JW12.txt"
-filename = '200420_both.txt'
 
-MaxLength = 35
+#%% test above
 
 
+
+MaxLength_CondName = 35
+
+import tkinter as tk
+from tkinter import filedialog as fd
+import numpy as np
 import pandas as pd
 #import itertools
 import os
@@ -25,23 +23,37 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from random import seed as rseed
 import seaborn as sns
-import numpy as np
+from pathlib import Path
+
+#top = tk.Tk()
+#checkbox1 = tk.IntVar()
+#c1 = tk.Checkbutton(top, text="test 1", height=5, width = 20, 
+#                    onvalue = 1, offvalue = 0, variable = checkbox1)
+#c1.pack()
+#top.mainloop()
+#top.focus_force()
+#top.withdraw()
+
+csvFile = os.path.abspath( fd.askopenfilename() )
+
+
+
+#csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
+data_dir = os.path.abspath(os.path.join(csvFile, os.pardir))
+figureDir = os.path.abspath(os.path.join(data_dir, 'figures'))
 
 starttime = datetime.now()
 rseed(22)
 
-base_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-datapath = os.path.abspath(os.path.join(base_dir, 'results', 'output', filename))
-outputdir = os.path.abspath(os.path.join(base_dir, 'results', 'figures'))
 
-if not os.path.exists(outputdir):
-    os.mkdir(outputdir)
-    
+if not os.path.exists(figureDir):
+    os.mkdir(figureDir)
 
-read_and_order = 1
-cen_histograms = 1
-make_vplots = 1
-violinpercell = 1
+# move below into dialog window once I figure out how
+read_and_order  = True
+cen_histograms  = True
+make_vplots     = True
+violinpercell   = True
 
 #%% FUNCTIONS
 def make_histdf(df, ex_zeroes=True):
@@ -60,8 +72,8 @@ def make_histdf(df, ex_zeroes=True):
                      .reset_index()
                      .sort_values('CENs'))
     
-    if MaxLength:
-        df = shorten_column_name(df,'Condition',MaxLength)
+    if MaxLength_CondName:
+        df = shorten_column_name(df,'Condition',MaxLength_CondName)
     
     return df
 
@@ -78,7 +90,7 @@ def shorten_column_name(df,column,L):
 
 if read_and_order:
     
-    with open (datapath, "r") as myfile:
+    with open (csvFile, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
     full_df=pd.DataFrame(columns=['Condition','Cell','CENs','tubI'])
 
@@ -118,8 +130,8 @@ if cen_histograms:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurepath = os.path.abspath(os.path.join(outputdir, filename[:-4]+'_hist.png'))
-    plt.savefig(figurepath,dpi=600)
+    figurePath = os.path.abspath(os.path.join(figureDir, csvFile[:-4]+'_hist.png'))
+    plt.savefig(figurePath, dpi=600)
 #    plt.show()
     plt.clf()
 
@@ -128,7 +140,7 @@ if cen_histograms:
     
 if make_vplots:
     # figure output directory
-    vfigdir = os.path.abspath(os.path.join(outputdir,filename[:-4]))
+    vfigdir = os.path.abspath(os.path.join(figureDir,csvFile[:-4]))
     if not os.path.exists(vfigdir):
         os.mkdir(vfigdir)
     
@@ -138,8 +150,8 @@ if make_vplots:
         cond_df = full_df[full_df.Condition == currcond]
 
         #shorten condition name
-        if MaxLength and len(currcond) > MaxLength:
-            condname = currcond[:MaxLength-3]+'...'
+        if MaxLength_CondName and len(currcond) > MaxLength_CondName:
+            condname = currcond[:MaxLength_CondName-3]+'...'
         else:
             condname = currcond
 
@@ -157,9 +169,9 @@ if make_vplots:
 #        plt.show()
         
         # save violin plot
-        figurepath = os.path.abspath(os.path.join(outputdir,filename[:-4]+ '_' + condname  +'_line.png'))
-#        figurepath = os.path.abspath(os.path.join(vfigdir, condname  +'_violin.png'))
-        plt.savefig(figurepath,dpi=600)
+        figurePath = os.path.abspath(os.path.join(figureDir,csvFile[:-4]+ '_' + condname  +'_line.png'))
+#        figurePath = os.path.abspath(os.path.join(vfigdir, condname  +'_violin.png'))
+        plt.savefig(figurePath,dpi=600)
         plt.clf()
 
         if violinpercell:
@@ -189,7 +201,7 @@ if make_vplots:
                 
                 # save figure            
                 violin_name = condname + "_" + currcell
-                figurepath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
-                plt.savefig(figurepath,dpi=600)
+                figurePath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
+                plt.savefig(figurePath,dpi=600)
     #            plt.show()
                 plt.clf()

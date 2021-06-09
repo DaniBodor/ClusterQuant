@@ -25,30 +25,32 @@ from random import seed as rseed
 import seaborn as sns
 from pathlib import Path
 
-#top = tk.Tk()
+top = tk.Tk()
 #checkbox1 = tk.IntVar()
 #c1 = tk.Checkbutton(top, text="test 1", height=5, width = 20, 
 #                    onvalue = 1, offvalue = 0, variable = checkbox1)
 #c1.pack()
 #top.mainloop()
 #top.focus_force()
-#top.withdraw()
+top.withdraw()
 
-csvFile = os.path.abspath( fd.askopenfilename() )
+print('find file open window!')
 
+csvPath = os.path.abspath( fd.askopenfilename() )
+csvFile = os.path.basename(csvPath)
 
 
 #csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
-data_dir = os.path.abspath(os.path.join(csvFile, os.pardir))
+data_dir = os.path.abspath(os.path.join(csvPath, os.pardir))
 figureDir = os.path.join(data_dir, 'figures')
-os.mkdir(figureDir)
+
+if not os.path.exists(figureDir):
+    os.mkdir(figureDir)
 
 starttime = datetime.now()
 rseed(22)
 
 
-#if not os.path.exists(figureDir):
-#    os.mkdir(figureDir)
 
 # move below into dialog window once I figure out how
 read_and_order  = True
@@ -91,7 +93,7 @@ def shorten_column_name(df,column,L):
 
 if read_and_order:
     
-    with open (csvFile, "r") as myfile:
+    with open (csvPath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
     full_df=pd.DataFrame(columns=['Condition','Cell','CENs','tubI'])
 
@@ -131,7 +133,7 @@ if cen_histograms:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurePath = os.path.join(figureDir, csvFile[:-4]+'_hist.png')
+    figurePath = os.path.join(data_dir, 'figures', csvFile[:-4]+'_hist.png')
     plt.savefig(figurePath, dpi=600)
 #    plt.show()
     plt.clf()

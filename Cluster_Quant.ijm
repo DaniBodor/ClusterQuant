@@ -113,7 +113,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
-		subout = outdir + "output_" + File.getName(subdirname) + File.separator;
+		subout = outdir + File.getName(subdirname) + "_ROIs" + File.separator;
 		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 

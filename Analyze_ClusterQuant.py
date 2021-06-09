@@ -40,14 +40,15 @@ csvFile = os.path.abspath( fd.askopenfilename() )
 
 #csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
 data_dir = os.path.abspath(os.path.join(csvFile, os.pardir))
-figureDir = os.path.abspath(os.path.join(data_dir, 'figures'))
+figureDir = os.path.join(data_dir, 'figures')
+os.mkdir(figureDir)
 
 starttime = datetime.now()
 rseed(22)
 
 
-if not os.path.exists(figureDir):
-    os.mkdir(figureDir)
+#if not os.path.exists(figureDir):
+#    os.mkdir(figureDir)
 
 # move below into dialog window once I figure out how
 read_and_order  = True
@@ -130,7 +131,7 @@ if cen_histograms:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurePath = os.path.abspath(os.path.join(figureDir, csvFile[:-4]+'_hist.png'))
+    figurePath = os.path.join(figureDir, csvFile[:-4]+'_hist.png')
     plt.savefig(figurePath, dpi=600)
 #    plt.show()
     plt.clf()
@@ -140,9 +141,9 @@ if cen_histograms:
     
 if make_vplots:
     # figure output directory
-    vfigdir = os.path.abspath(os.path.join(figureDir,csvFile[:-4]))
-    if not os.path.exists(vfigdir):
-        os.mkdir(vfigdir)
+    violinFigDir = os.path.abspath(os.path.join(figureDir,csvFile[:-4]))
+    if not os.path.exists(violinFigDir):
+        os.mkdir(violinFigDir)
     
     max_CENs = full_df.CENs.max() #for formatting
 
@@ -169,8 +170,8 @@ if make_vplots:
 #        plt.show()
         
         # save violin plot
-        figurePath = os.path.abspath(os.path.join(figureDir,csvFile[:-4]+ '_' + condname  +'_line.png'))
-#        figurePath = os.path.abspath(os.path.join(vfigdir, condname  +'_violin.png'))
+        figurePath = os.path.join(figureDir,csvFile[:-4]+ '_' + condname  +'_line.png')
+#        figurePath = os.path.join(violinFigDir, condname  +'_violin.png')
         plt.savefig(figurePath,dpi=600)
         plt.clf()
 
@@ -201,7 +202,7 @@ if make_vplots:
                 
                 # save figure            
                 violin_name = condname + "_" + currcell
-                figurePath = os.path.abspath(os.path.join(vfigdir, violin_name  +'_violin.png'))
+                figurePath = os.path.join(violinFigDir, violin_name  +'_violin.png')
                 plt.savefig(figurePath,dpi=600)
     #            plt.show()
                 plt.clf()

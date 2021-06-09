@@ -121,7 +121,7 @@ if readData:
 
 
 
-#%% MAKE CEN HISTOGRAM
+#%% MAKE HISTOGRAM
 
 if makeHisto:
 
@@ -131,8 +131,8 @@ if makeHisto:
     
     # plot formatting
     plt.legend(prop={'size': 12})
-    plt.title('Centromeres per square')
-    plt.xlabel('Centromeres')
+    plt.title(spotName + ' per square')
+    plt.xlabel(spotName)
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
@@ -166,8 +166,8 @@ if makeVplots:
         sns.lineplot  (x =spotName, y=yAxisName, data=cond_df, color = 'r')
         
         plt.title(condname)
-        plt.xlabel('Centromeres')
-        plt.ylabel('Tubulin intensity')
+        plt.xlabel(spotName)
+        plt.ylabel(yAxisName)
         plt.xlim(-0.5, max_spots + 0.5 )
 #        plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
         plt.xticks(range(max_spots+1))
@@ -198,8 +198,8 @@ if makeVplots:
                 sns.lineplot  (x =spotName, y=yAxisName, data=violin_df, color = 'r')
                 
                 plt.title(condname + '\n' + currcell)
-                plt.xlabel('Centromeres')
-                plt.ylabel('Tubulin intensity')
+                plt.xlabel(spotName)
+                plt.ylabel(yAxisName)
                 plt.xlim(-0.5, max_spots + 0.5 )
                 plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
                 plt.grid(axis='y')

@@ -28,9 +28,10 @@ if (isOpen(debugWindow)){
 
 // set up dialog
 Dialog.createNonBlocking("ClusterQuant settings");
-	Dialog.addMessage(" SELECT DATA FOLDER");
+	Dialog.addMessage(" INPUT/OUTPUT");
 	Dialog.addMessage(" Main data folder should contain one subfolder with data per experimental condition");
 	Dialog.addDirectory("Main folder", main_data_default);
+	Dialog.addString("Experiment name", "ClusterQuant");
 	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
 	Dialog.addString("Output folder name","_Results");
 
@@ -67,6 +68,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 Dialog.show();	// retrieve input
 	// input/output
 	dir = Dialog.getString();
+	expName = Dialog.getString();
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
 	outdir = dir + Dialog.getString() + File.separator;
@@ -200,7 +202,7 @@ function getLocalBackground(){
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + "Log_" + starttime + ".csv");
+	saveAs("Text", outdir + expName + "_" + starttime + ".csv");
 }
 
 ////////////////////////////////////////////////////////

@@ -162,10 +162,10 @@ function fetchTimeStamp(format){
 	year = substring(d2s(year,0),2);
 	DateString = year + IJ.pad(month+1,2) + IJ.pad(dayOfMonth,2);
 	TimeString = IJ.pad(hour,2) + IJ.pad(minute,2);
-	DateTime = DateString+"_"+TimeString;
+	DateTime = DateString + TimeString;
 	
 	if (format == time_printing)	return IJ.pad(hour,2) + ":" + IJ.pad(minute,2);
-	if (format == file_naming)	return DateTime;
+	if (format == file_naming)		return DateTime;
 }
 
 
@@ -202,7 +202,7 @@ function getLocalBackground(){
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + expName + "_" + starttime + ".csv");
+	saveAs("Text", outdir + expName + "_PythonInput_" + starttime + ".csv");
 }
 
 ////////////////////////////////////////////////////////

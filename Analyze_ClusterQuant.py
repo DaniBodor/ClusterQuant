@@ -53,10 +53,13 @@ rseed(22)
 
 
 # move below into dialog window once I figure out how
-read_and_order  = True
-cen_histograms  = True
-make_vplots     = True
+readData  = True
+makeHisto  = True
+makeVplots     = True
 violinpercell   = True
+
+spotName = 'Spots'
+yAxisName = 'Intensity'
 
 #%% FUNCTIONS
 def make_histdf(df, ex_zeroes=True):
@@ -67,16 +70,16 @@ def make_histdf(df, ex_zeroes=True):
     ex_zeroes: boolean; exclude zero values from frequency distribution
     '''
     if ex_zeroes:
-        df = df[df.CENs != 0]
+        df = df[df[spotName] != 0]
     
-    df = (df.groupby(['Condition'])['CENs']
+    df = (df.groupby(['Condition'])[spotName]
                      .value_counts(normalize=True)
                      .rename('frequency')
                      .reset_index()
-                     .sort_values('CENs'))
+                     .sort_values(spotName))
     
     if MaxLength_CondName:
-        df = shorten_column_name(df,'Condition',MaxLength_CondName)
+        df = shorten_column_name(df, 'Condition', MaxLength_CondName)
     
     return df
 
@@ -84,18 +87,18 @@ def make_histdf(df, ex_zeroes=True):
 
 def shorten_column_name(df,column,L):
     long_cond_names = list(df.Condition.unique())
-    short_cond_names = [x[:L-3]+'...' if len(x)>L  else x for x in long_cond_names]
+    short_cond_names = [x[:L-3]+'...' if len(x)>L else x for x in long_cond_names]
     df = df.replace(long_cond_names,short_cond_names)
     
     return df
 
 #%% READ AND ORDER DATA
 
-if read_and_order:
+if readData:
     
     with open (csvPath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
-    full_df=pd.DataFrame(columns=['Condition','Cell','CENs','tubI'])
+    full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
 
     Condition,Cell = '',''
     for i,l in enumerate(lines):
@@ -103,28 +106,28 @@ if read_and_order:
             Condition = l[3:-1]
         elif l.startswith('**'):
             Cell = l[2:-1]
-            CENs = [int(s)   for s in lines[i+1].split(', ')]
-            tubI = [float(s)   for s in lines[i+2].split(', ')]
+            spots = [int(s)   for s in lines[i+1].split(', ')]
+            signal = [float(s)   for s in lines[i+2].split(', ')]
             
-            indata = {'CENs': CENs,
-                      'tubI': tubI,
-                      'Condition': [Condition]*len(CENs),
-                      'Cell': [Cell]*len(CENs)}
+            indata = {spotName: spots,
+                      yAxisName: signal,
+                      'Condition': [Condition]*len(spots),
+                      'Cell': [Cell]*len(spots)}
             
             celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(celldf)                # add cell to dataframe
-    full_df=full_df [['Condition','Cell','CENs','tubI']]    # reorder columns
+    full_df = full_df [['Condition', 'Cell', spotName, yAxisName]]    # reorder columns
 
 
 
 
 #%% MAKE CEN HISTOGRAM
 
-if cen_histograms:
+if makeHisto:
 
     histogram_df = make_histdf(full_df)    
     
-    sns.barplot(x="CENs", y="frequency", hue="Condition", data=histogram_df)
+    sns.barplot(x=spotName, y="frequency", hue="Condition", data=histogram_df)
     
     # plot formatting
     plt.legend(prop={'size': 12})
@@ -141,13 +144,13 @@ if cen_histograms:
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
-if make_vplots:
+if makeVplots:
     # figure output directory
     violinFigDir = os.path.abspath(os.path.join(figureDir,csvFile[:-4]))
     if not os.path.exists(violinFigDir):
         os.mkdir(violinFigDir)
     
-    max_CENs = full_df.CENs.max() #for formatting
+    max_spots = full_df[spotName].max() #for formatting
 
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
@@ -159,21 +162,20 @@ if make_vplots:
             condname = currcond
 
         # create line of all data per condition
-#        sns.violinplot(x ='CENs', y='tubI', data=cond_df, scale="width", color = 'lightskyblue')
-        sns.lineplot  (x ='CENs', y='tubI', data=cond_df, color = 'r')
+#        sns.violinplot(x =spotName, y=yAxisName, data=cond_df, scale="width", color = 'lightskyblue')
+        sns.lineplot  (x =spotName, y=yAxisName, data=cond_df, color = 'r')
         
         plt.title(condname)
         plt.xlabel('Centromeres')
         plt.ylabel('Tubulin intensity')
-        plt.xlim(-0.5, max_CENs + 0.5 )
-#        plt.ylim(full_df.tubI.min(),full_df.tubI.max())
-        plt.xticks(range(max_CENs+1))
+        plt.xlim(-0.5, max_spots + 0.5 )
+#        plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
+        plt.xticks(range(max_spots+1))
         plt.grid()
 #        plt.show()
         
         # save violin plot
         figurePath = os.path.join(figureDir,csvFile[:-4]+ '_' + condname  +'_line.png')
-#        figurePath = os.path.join(violinFigDir, condname  +'_violin.png')
         plt.savefig(figurePath,dpi=600)
         plt.clf()
 
@@ -184,27 +186,27 @@ if make_vplots:
                 violin_df = cond_df[cond_df.Cell == currcell]
     
                 # add missing x values
-                for N in range(max_CENs+1):
-                    if not N in violin_df.CENs.unique():
-                        newrow = {'Cndition':condname, 'Cell':currcell, 'CENs':N, 'tubI':np.nan}
+                for N in range(max_spots+1):
+                    if not N in violin_df[spotName].unique():
+                        newrow = {'Cndition':condname, 'Cell':currcell, spotName:N, yAxisName:np.nan}
                         violin_df = violin_df.append(newrow, ignore_index=True)
                 
                 
                 
                 # plot & formatting
-                sns.violinplot(x ='CENs', y='tubI', data=violin_df, scale="width", color = 'lightskyblue')
-                sns.lineplot  (x ='CENs', y='tubI', data=violin_df, color = 'r')
+                sns.violinplot(x =spotName, y=yAxisName, data=violin_df, scale="width", color = 'lightskyblue')
+                sns.lineplot  (x =spotName, y=yAxisName, data=violin_df, color = 'r')
                 
                 plt.title(condname + '\n' + currcell)
                 plt.xlabel('Centromeres')
                 plt.ylabel('Tubulin intensity')
-                plt.xlim(-0.5, max_CENs + 0.5 )
-                plt.ylim(full_df.tubI.min(),full_df.tubI.max())
+                plt.xlim(-0.5, max_spots + 0.5 )
+                plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
                 plt.grid(axis='y')
                 
                 # save figure            
                 violin_name = condname + "_" + currcell
-                figurePath = os.path.join(violinFigDir, violin_name  +'_violin.png')
-                plt.savefig(figurePath,dpi=600)
+                figurePath = os.path.join(violinFigDir, violin_name  + '_violin.png')
+                plt.savefig(figurePath, dpi=600)
     #            plt.show()
                 plt.clf()

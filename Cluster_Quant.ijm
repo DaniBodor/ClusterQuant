@@ -30,42 +30,52 @@ if (isOpen(debugWindow)){
 
 // set up dialog
 Dialog.createNonBlocking("ClusterQuant settings");
+	Dialog.setInsets(0,0,0);
 	Dialog.addMessage(" INPUT/OUTPUT");
-	Dialog.addMessage(" Main data folder should contain one subfolder with data per experimental condition");
+	Dialog.setInsets(0, 100, 0);
+	Dialog.addMessage("Main data folder should contain one subfolder with data per experimental condition");
+	Dialog.setInsets(0, 20, 0);
 	Dialog.addDirectory("Main folder", main_data_default);
 	Dialog.addString("Experiment name", "ClusterQuant");
 	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
 	Dialog.addString("Output folder name","_Results");
 
-	Dialog.addMessage("\n SET CHANNEL ORDER");
+	Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" SET CHANNEL ORDER");
+	Dialog.setInsets(0,0,0);
 	Dialog.addNumber("Clustering channel",	4,0,3, "channel to measuring degree of clustering"); // former: Kinetochore channel
 	Dialog.addNumber("Correlation channel",	3,0,3, "channel to correlate degree of clustering with; use 0 to skip this step"); // former: Microtubule channel
 	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); // former: DNA channel
 	Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
 
-	Dialog.addMessage("\n MEASRUEMENT WINDOWS");
-	Dialog.addNumber("Window size", 		16,0,3, "pixels");
-	Dialog.addNumber("Displacement ratio",	 4,0,3, "Window size / N");	// pixel displacement of separate windows (0 = gridsize; negative = fraction of gridsize -- see notes below)
+	Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" MEASUREMENT");
+	Dialog.setInsets(0,0,0);
+	Dialog.addNumber("Window size", 		 16,0,3, "pixels");
+	Dialog.addNumber("Window displacement",	  4,0,3, "pixels");
+	Dialog.addNumber("Spot prominence",		150,0,3, "Higher numbers are more exclusive");	// prominence parameter from 'Find Maxima'
 
-	Dialog.addMessage("\n SPOT RECOGNITION");
-	Dialog.addNumber("Prominence factor",	150,0,3, "");
-
-	Dialog.addMessage("\n NUCLEUS OUTLINING");
+	Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" BACKGROUND CORRECTION");
+	Dialog.setInsets(0,0,2);
+	background_methods = newArray("None", "Global", "Local");
+	Dialog.addChoice("Background correction", background_methods, background_methods[2]);
+	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
+	
+	Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" NUCLEUS OUTLINING");
+	Dialog.setInsets(0,0,2);
 	T_options = getList("threshold.methods");
-	Dialog.addChoice("DNA thresholding method", T_options, "Huang");		// potentially use RenyiEntropy?
-	Dialog.addNumber("Gaussian blur",		40,0,3, "pixels");
+	Dialog.addChoice("DNA thresholding", T_options, "Huang");		// potentially use RenyiEntropy?
+	Dialog.addNumber("Gaussian blur radius",		40,0,3, "pixels");
 	Dialog.addNumber("Dilate cycles",		 4,0,3, "pixels (after 1 erode cycle)");
 
-	Dialog.addMessage("\n BACKGROUND CORRECTION");
-	background_methods = newArray("None", "Global", "Local");
-	Dialog.addChoice("background correction method", background_methods, background_methods[2]);
-	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
-
-	Dialog.addMessage("\n OTHER");
+	Dialog.setInsets(0,0,0);
+	Dialog.addMessage(" OTHER");
 	Dialog.setInsets(0, 20, 0);
-	Dialog.addCheckbox("Exclude regions", 1);
+	Dialog.addCheckbox("Exclude regions", 0);
 	Dialog.addCheckbox("Load previously excluded regions", 1);
-	Dialog.addNumber("Crop deconvolution border", 	 0,0,3, "pixels (16 is default for DV; 0 for no deconvolution");
+	Dialog.addNumber("Deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no cropping");
 
 Dialog.show();	// retrieve input
 	// input/output
@@ -74,30 +84,30 @@ Dialog.show();	// retrieve input
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
 	outdir = dir + Dialog.getString() + File.separator;
-	subdirs = getFileList (dir);
-	File.makeDirectory(outdir);
+		File.makeDirectory(outdir);
+		roiDir = outdir + "ROIs" + File.separator;
+		File.makeDirectory(roiDir);
+		subdirs = getFileList (dir);
 
 	// channel order
 	clusterChannel = 	Dialog.getNumber(); // former KTchannel
-	correlChanel =		Dialog.getNumber(); // former MTchannel
+	correlChanel =		Dialog.getNumber(); // former MTchannelro
 	dnaChannel =		Dialog.getNumber(); // former DNAchannel
 	otherChannel =		Dialog.getNumber(); // former COROchannel
 
-	// grid parameters
+	// measurement parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
-	winDisplacement =	gridSize / Dialog.getNumber(); // pixel displacement of grid at each step
-
-	// Centromere recognition
-	prominence =		Dialog.getNumber();		// prominence value of find maxima function
-
-	// Nuclear outline
-	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy?
-	gaussSigma = 	Dialog.getNumber();	// currently unused
-	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline
+	winDisplacement =	Dialog.getNumber(); // pixel displacement of grid at each step
+	prominence =		Dialog.getNumber();	// prominence value of find maxima function
 
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
+	
+	// Nuclear outline
+	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy?
+	gaussSigma = 	Dialog.getNumber();	// currently unused
+	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline
 
 	// Other
 	excludeRegions =	Dialog.getCheckbox();
@@ -117,8 +127,10 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
-		subout = outdir + File.getName(subdirname) + "_ROIs" + File.separator;
+		subout = roiDir + File.getName(subdirname) + "_ROIs" + File.separator;
 		File.makeDirectory(subout);
+//		print(roiDir);
+//		waitForUser(roiDir);
 		print("***" + File.getName(subdirname));
 
 		for (f = 0; f < filelist.length; f++) {		// loop through individual images within condition-folder

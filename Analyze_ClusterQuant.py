@@ -127,8 +127,11 @@ if readData:
 
 if makeHisto:
 
+    # make and export histogram
     histogram_df = make_histdf(full_df)    
+    histogram_df.to_csv(os.path.join(data_dir, expName + '_histogram.csv'))
     
+    # generate plot
     sns.barplot(x=spotName, y="frequency", hue="Condition", data=histogram_df)
     
     # plot formatting

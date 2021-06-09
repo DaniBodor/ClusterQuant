@@ -85,7 +85,7 @@ Dialog.show();	// retrieve input
 	imageIdentifier = imageIdentifier.toLowerCase;
 	outdir = dir + Dialog.getString() + File.separator;
 		File.makeDirectory(outdir);
-		roiDir = outdir + "ROIs" + File.separator;
+		roiDir = outdir + expName + "_ROIs" + File.separator;
 		File.makeDirectory(roiDir);
 		subdirs = getFileList (dir);
 

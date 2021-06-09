@@ -11,7 +11,6 @@ Created on Mon Mar  9 14:13:59 2020
 
 
 
-MaxLength_CondName = 35
 
 import tkinter as tk
 from tkinter import filedialog as fd
@@ -43,7 +42,7 @@ expName = csvFile[:csvFile.find("_Python")]
 
 #csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
 data_dir = os.path.abspath(os.path.join(csvPath, os.pardir))
-figureDir = os.path.join(data_dir, 'Figures_' + expName)
+figureDir = os.path.join(data_dir, expName + '_PythonOutput')
 
 if not os.path.exists(figureDir):
     os.mkdir(figureDir)
@@ -62,6 +61,8 @@ makeHisto       = True # create histogram of spot data
 makeLineplot    = True # create a correlation graph between spots and intensities
 makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
 
+cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
+MaxLength_CondName = 0
 
 #%% FUNCTIONS
 def make_histdf(df, ex_zeroes=True):
@@ -94,6 +95,19 @@ def shorten_column_name(df,column,L):
     
     return df
 
+
+def name_cleaner(name):
+    for x in cleanup:
+        name = name.replace(x, '')
+    while '__' in name:
+        name = name.replace('__', '_')
+    name = name.replace('.','')
+
+    while name[-1] == '_':
+        name = name[:-1]
+    
+    return name
+
 #%% READ AND ORDER DATA
 
 if readData:
@@ -107,7 +121,7 @@ if readData:
         if l.startswith('***'):
             Condition = l[3:-1]
         elif l.startswith('**'):
-            Cell = l[2:-1]
+            Cell = name_cleaner(l[2:-1])
             spots = [int(s)   for s in lines[i+1].split(', ')]
             signal = [float(s)   for s in lines[i+2].split(', ')]
             
@@ -129,7 +143,6 @@ if makeHisto:
 
     # make and export histogram
     histogram_df = make_histdf(full_df)    
-    histogram_df.to_csv(os.path.join(data_dir, expName + '_histogram.csv'))
     
     # generate plot
     sns.barplot(x=spotName, y="frequency", hue="Condition", data=histogram_df)
@@ -141,8 +154,11 @@ if makeHisto:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurePath = os.path.join(figureDir, expName+'_hist.png')
-    plt.savefig(figurePath, dpi=600)
+    
+    # save plot and data
+    figurePath =         os.path.join(figureDir, expName + '_hist.png')
+    histogram_df.to_csv( os.path.join(figureDir, expName + '_hist.csv') )
+    plt.savefig(    figurePath, dpi=600)
 #    plt.show()
     plt.clf()
 
@@ -151,7 +167,7 @@ if makeHisto:
     
 if makeLineplot:
     # figure output directory
-    violinFigDir = os.path.abspath(os.path.join(figureDir,expName))
+    violinFigDir = os.path.abspath(os.path.join(figureDir, 'ViolinFigs'))
     if not os.path.exists(violinFigDir):
         os.mkdir(violinFigDir)
     
@@ -159,16 +175,13 @@ if makeLineplot:
 
     for currcond in full_df.Condition.unique():
         cond_df = full_df[full_df.Condition == currcond]
-
-        #shorten condition name
-        if MaxLength_CondName and len(currcond) > MaxLength_CondName:
-            condname = currcond[:MaxLength_CondName-3]+'...'
-        else:
-            condname = currcond
-
+        condname = currcond
+        if MaxLength_CondName and len(condname) > MaxLength_CondName:
+            condname = condname[:MaxLength_CondName-3] + '...'
+          
         # create line of all data per condition
 #        sns.violinplot(x =spotName, y=yAxisName, data=cond_df, scale="width", color = 'lightskyblue')
-        sns.lineplot  (x =spotName, y=yAxisName, data=cond_df, color = 'r')
+        sns.lineplot  (x = spotName, y = yAxisName, data = cond_df, color = 'r')
         
         plt.title(condname)
         plt.xlabel(spotName)
@@ -179,8 +192,9 @@ if makeLineplot:
         plt.grid()
 #        plt.show()
         
-        # save violin plot
-        figurePath = os.path.join(figureDir, expName+ '_' + condname  + '_line.png')
+        # save violin plot and data
+        cond_df.to_csv( os.path.join(figureDir, expName + '_' + condname  + '_correlation.csv'))
+        figurePath =    os.path.join(figureDir, expName + '_' + condname  + '_correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()
 
@@ -193,14 +207,15 @@ if makeLineplot:
                 # add missing x values
                 for N in range(max_spots+1):
                     if not N in violin_df[spotName].unique():
-                        newrow = {'Cndition':condname, 'Cell':currcell, spotName:N, yAxisName:np.nan}
+                        newrow = {'Condition':condname, 'Cell':currcell, spotName:N, yAxisName:np.nan}
                         violin_df = violin_df.append(newrow, ignore_index=True)
                 
                 
                 
                 # plot & formatting
-                sns.violinplot(x =spotName, y=yAxisName, data=violin_df, scale="width", color = 'lightskyblue')
-                sns.lineplot  (x =spotName, y=yAxisName, data=violin_df, color = 'r')
+                sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
+                sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
+                               scale = "width", color = 'lightskyblue')
                 
                 plt.title(condname + '\n' + currcell)
                 plt.xlabel(spotName)
@@ -209,9 +224,9 @@ if makeLineplot:
                 plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
                 plt.grid(axis='y')
                 
-                # save figure            
+                # save figure and data
                 violin_name = condname + "_" + currcell
-                figurePath = os.path.join(violinFigDir, violin_name  + '_violin.png')
+                figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
                 plt.savefig(figurePath, dpi=600)
     #            plt.show()
                 plt.clf()

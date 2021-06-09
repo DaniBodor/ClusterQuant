@@ -38,11 +38,12 @@ print('find file open window!')
 
 csvPath = os.path.abspath( fd.askopenfilename() )
 csvFile = os.path.basename(csvPath)
+expName = csvFile[:csvFile.find("_Python")]
 
 
 #csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
 data_dir = os.path.abspath(os.path.join(csvPath, os.pardir))
-figureDir = os.path.join(data_dir, 'figures')
+figureDir = os.path.join(data_dir, 'Figures_' + expName)
 
 if not os.path.exists(figureDir):
     os.mkdir(figureDir)
@@ -53,13 +54,14 @@ rseed(22)
 
 
 # move below into dialog window once I figure out how
-readData  = True
-makeHisto  = True
-makeVplots     = True
-violinpercell   = True
-
 spotName = 'Spots'
 yAxisName = 'Intensity'
+
+readData        = True # reads data from file; set to False to save time when re-analyzing previous
+makeHisto       = True # create histogram of spot data
+makeLineplot    = True # create a correlation graph between spots and intensities
+makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
+
 
 #%% FUNCTIONS
 def make_histdf(df, ex_zeroes=True):
@@ -136,7 +138,7 @@ if makeHisto:
     plt.ylabel('Frequency')
     plt.grid(axis='y')
     
-    figurePath = os.path.join(data_dir, 'figures', csvFile[:-4]+'_hist.png')
+    figurePath = os.path.join(figureDir, expName+'_hist.png')
     plt.savefig(figurePath, dpi=600)
 #    plt.show()
     plt.clf()
@@ -144,9 +146,9 @@ if makeHisto:
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
-if makeVplots:
+if makeLineplot:
     # figure output directory
-    violinFigDir = os.path.abspath(os.path.join(figureDir,csvFile[:-4]))
+    violinFigDir = os.path.abspath(os.path.join(figureDir,expName))
     if not os.path.exists(violinFigDir):
         os.mkdir(violinFigDir)
     
@@ -175,11 +177,11 @@ if makeVplots:
 #        plt.show()
         
         # save violin plot
-        figurePath = os.path.join(figureDir,csvFile[:-4]+ '_' + condname  +'_line.png')
-        plt.savefig(figurePath,dpi=600)
+        figurePath = os.path.join(figureDir, expName+ '_' + condname  + '_line.png')
+        plt.savefig(figurePath, dpi=600)
         plt.clf()
 
-        if violinpercell:
+        if makeViolinplots:
         # create violin of data per cell
             for i,currcell in enumerate(cond_df.Cell.unique()):
                 print (i,end=',')

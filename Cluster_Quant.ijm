@@ -1,4 +1,4 @@
-main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\test_data";
+main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\testData";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 time_printing = "time_printing";
@@ -7,6 +7,8 @@ starttime = fetchTimeStamp(file_naming);
 makeDebugTextWindow = 0;
 debugWindow = "Debugging";
 start = getTime();
+closeWinsWhenDone = true;	// turn off for debugging
+
 
 run ("Close All");
 print ("\\Clear");
@@ -147,6 +149,15 @@ print(nondataprefix, "All done");
 
 saveLog();
 
+if (closeWinsWhenDone){
+	selectWindow("Results");
+	run("Close");
+
+	selectWindow("ROI Manager");
+	run("Close");
+}
+
+
 
 
 
@@ -162,7 +173,7 @@ function fetchTimeStamp(format){
 	year = substring(d2s(year,0),2);
 	DateString = year + IJ.pad(month+1,2) + IJ.pad(dayOfMonth,2);
 	TimeString = IJ.pad(hour,2) + IJ.pad(minute,2);
-	DateTime = DateString + TimeString;
+	DateTime = "_" + DateString + TimeString;
 	
 	if (format == time_printing)	return IJ.pad(hour,2) + ":" + IJ.pad(minute,2);
 	if (format == file_naming)		return DateTime;
@@ -202,7 +213,7 @@ function getLocalBackground(){
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + expName + "_PythonInput_" + starttime + ".csv");
+	saveAs("Text", outdir + expName + "_PythonInput" + starttime + ".csv");
 }
 
 ////////////////////////////////////////////////////////
@@ -353,7 +364,7 @@ function measureClustering(){
 	// find kinetochores
 	selectImage(ori);
 	setSlice(clusterChannel);
-	run("Find Maxima...", "prominence=&prominence strict exclude output=[Single Points]");
+	run("Find Maxima...", "prominence=" + prominence + " strict exclude output=[Single Points]");
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);
 	roiManager("Show All without labels");

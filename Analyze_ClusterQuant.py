@@ -5,6 +5,8 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 dataDir = r'.\data\testData\_ClusterQuant'
+exclude_zeroes  = True # include or exclude 0s from histogram
+
 
 #%% test above
 
@@ -26,7 +28,6 @@ figureDir = os.path.join(dataDir, 'Results_' + timestamp)
 
 starttime = datetime.now()
 
-exclude_zeroes  = False # include or exclude 0s from histogram
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = True # create histogram of spot data
 makeLineplot    = True # create a correlation graph between spots and intensities
@@ -41,11 +42,8 @@ def make_histdf(df):
     This function will create a frequency distribution dataframe used for histograms
     df: dataframe; input data
     MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
-    ex_zeroes: boolean; exclude zero values from frequency distribution
     '''
-    if exclude_zeroes:
-        df = df[df[spotName] != 0]
-    
+
     df = (df.groupby(['Condition'])[spotName]
                      .value_counts(normalize=True)
                      .rename('frequency')
@@ -79,6 +77,11 @@ def name_cleaner(name):
     
     return name
 
+def excl_0(df):
+    df = df[df[spotName] != 0]
+    return df
+        
+        
 #%% READ AND ORDER DATA
 
 if readData:
@@ -123,7 +126,11 @@ if makeHisto:
 
     # make and export histogram
     histogram_df = make_histdf(full_df)    
+    histogram_df.to_csv( os.path.join(figureDir, 'Histogram.csv') )
     
+    if exclude_zeroes:
+        histogram_df = excl_0(histogram_df)
+
     # generate plot
     sns.barplot(x=spotName, y="frequency", hue="Condition", data=histogram_df)
     
@@ -133,11 +140,9 @@ if makeHisto:
     plt.xlabel(spotName)
     plt.ylabel('Frequency')
     plt.grid(axis='y')
-    
-    
-    # save plot and data
+     
+    # save plot
     figurePath =         os.path.join(figureDir, 'Histogram.png')
-    histogram_df.to_csv( os.path.join(figureDir, 'Histogram.csv') )
     plt.savefig(    figurePath, dpi=600)
 #    plt.show()
     plt.clf()
@@ -154,11 +159,16 @@ if makeLineplot:
     max_spots = full_df[spotName].max() #for formatting
 
     for currcond in full_df.Condition.unique():
+        # generate and save correlation df per condition
         cond_df = full_df[full_df.Condition == currcond]
         condname = currcond
+        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
         if MaxLength_CondName and len(condname) > MaxLength_CondName:
             condname = condname[:MaxLength_CondName-3] + '...'
-          
+        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
+        if exclude_zeroes:
+            cond_df = excl_0(cond_df)
+         
         # create line of all data per condition
         sns.lineplot  (x = spotName, y = yAxisName, data = cond_df, color = 'r')
         
@@ -170,8 +180,7 @@ if makeLineplot:
         plt.grid()
 #        plt.show()
         
-        # save violin plot and data
-        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
+        # save violin plot
         figurePath =    os.path.join(figureDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()

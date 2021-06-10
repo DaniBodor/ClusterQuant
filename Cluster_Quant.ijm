@@ -1,4 +1,4 @@
-main_data_default = "C:\\Users\\dani\\Documents\\MyCodes\\ClusterQuant\\data\\testData";
+main_data_default = "";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
 time_printing = "time_printing";
@@ -19,13 +19,7 @@ if (isOpen(debugWindow)){
 	selectWindow(debugWindow);
 	run("Close");
 }
-
-
-
-
 //run("Text Window...", "name=" + debugWindow + " width=80 height=24 menu");		setLocation(3200, 140);		debugWindow = "[" + debugWindow + "]";
-
-
 
 
 // set up dialog
@@ -37,27 +31,25 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(0, 20, 0);
 	Dialog.addDirectory("Main folder", main_data_default);
 	Dialog.addString("Experiment name", "ClusterQuant", 12);
-	Dialog.addString("Image identifier", "D3D_PRJ.dv", 12);
-	//Dialog.addToSameRow();
+	Dialog.addString("Image identifier", ".dv", 12);
 	Dialog.setInsets(-35, 255, 0);
 	Dialog.addMessage("filenames without this identifier are excluded");
 
 	Dialog.setInsets(10,0,0);
-	Dialog.addMessage(" SET CHANNEL ORDER");
+	Dialog.addMessage(" CHANNELS");
 	Dialog.setInsets(0,0,0);
 	Dialog.addNumber("Clustering channel",	4,0,3, "measure degree of clustering"); // former: Kinetochore channel
 	Dialog.addToSameRow();	Dialog.addString("Name","Centromeres",12);
-	Dialog.addNumber("Correlation channel",	3,0,3, "correlate clustering with (0 to skip)"); // former: Microtubule channel
+	Dialog.addNumber("Correlation channel",	3,0,3, "correlate clustering with"); // former: Microtubule channel
 	Dialog.addToSameRow();	Dialog.addString("Name","Intensity",12);
-	Dialog.addNumber("DNA channel",			1,0,3, "exclude background foci (0 to skip; -1 for manual)"); // former: DNA channel
-	//Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
+	Dialog.addNumber("DNA channel",			1,0,3, "0 to skip; -1 for manual"); // former: DNA channel
 
 	Dialog.setInsets(10,0,0);
-	Dialog.addMessage(" MEASUREMENT");
+	Dialog.addMessage(" ANALYSIS");
 	Dialog.setInsets(0,0,0);
 	Dialog.addNumber("Window size", 		 16,0,3, "pixels");
 	Dialog.addNumber("Window displacement",	  4,0,3, "pixels");
-	Dialog.addNumber("Spot prominence",		150,0,3, "(higher value is more exclusive)");	// prominence parameter from 'Find Maxima'
+	Dialog.addNumber("Spot prominence",		150,0,3, "(higher is more exclusive)");	// prominence parameter from 'Find Maxima'
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
@@ -75,13 +67,12 @@ Dialog.show();	// retrieve input
 	expName = replace(expName, " ", "_");
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
-	outdir = dir + "_" + expName + starttime + File.separator;
+	outdir = dir + "_" + expName + File.separator;
 
 	// channel order
 	clusterChannel = 	Dialog.getNumber(); // former KTchannel
 	correlChanel =		Dialog.getNumber(); // former MTchannelro
 	dnaChannel =		Dialog.getNumber(); // former DNAchannel
-	//otherChannel =		Dialog.getNumber(); // former COROchannel
 	clusterName =		Dialog.getString(); // for x-axis title
 	correlName =		Dialog.getString(); // for y-axis title
 
@@ -110,7 +101,7 @@ Dialog.create("Extended settings");
 	Dialog.addMessage(" DNA DETECTION");
 	//Dialog.setInsets(0, 20, 0);
 	T_options = getList("threshold.methods");
-	Dialog.addChoice("DNA thresholding", T_options, "Huang");		// potentially use RenyiEntropy?
+	Dialog.addChoice("DNA thresholding", T_options, "RenyiEntropy");		// potentially use RenyiEntropy / Huang?
 	Dialog.addNumber("Dilate iterations", 4,0,3, "(after 1 erode iteration)");
 	
 	//Dialog.setInsets(5,0,0);
@@ -149,8 +140,6 @@ for (d = 0; d < subdirs.length; d++) {
 		filelist = getFileList (subdirname);
 		subout = roiDir + File.getName(subdirname) + "_ROIs" + File.separator;
 		File.makeDirectory(subout);
-//		print(roiDir);
-//		waitForUser(roiDir);
 		print("***" + File.getName(subdirname));
 
 		for (f = 0; f < filelist.length; f++) {		// loop through individual images within condition-folder
@@ -238,14 +227,12 @@ function getLocalBackground(){
 	bgArea	= largeArea - rawArea;
 	bgSignal= (largeDens - rawDens) / bgArea;
 
-	//print(largeArea, largeMean, rawDens, bgArea, bgSignal);
-
 	return bgSignal;
 }
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + "_PythonInput.csv");
+	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
 }
 
 ////////////////////////////////////////////////////////
@@ -266,10 +253,10 @@ function clusterQuantification(){
 
 	// run sequential steps:
 		// step 1: get DAPI outline
-		if(dnaChannel != 0) makeMask();
+		makeMask();
 		// step 2: exclude regions
-		if (excludeRegions) 			setExcludeRegions();
-		else if (roiManager("count")>0) roiManager("save", ROIfile);
+		if (excludeRegions) 	setExcludeRegions();
+		else roiManager("save", ROIfile);
 		// step 3: make grid
 		makeGrid();
 		// step 4: make measurements
@@ -294,7 +281,7 @@ function clusterQuantification(){
 // step 1
 function makeMask(){
 
-	if (dnaChannel >0) {
+	if (dnaChannel > 0) {
 		// prep images
 		selectImage(ori);
 		setSlice (dnaChannel);
@@ -308,9 +295,8 @@ function makeMask(){
 		run("Erode");
 		for (i = 0; i < dilateCycles; i++)	run("Dilate");
 	
-		// find main cell in mask
-		run("Analyze Particles...", "display clear include add");
-	
+		// find main cell from mask
+		run("Analyze Particles...", "display exclude clear include add");
 		while ( roiManager("count") > 1){
 			roiManager("select", 0);
 			getStatistics(area_0);
@@ -322,7 +308,7 @@ function makeMask(){
 		close(mask);
 	}
 	
-	else { // manual selection of analysis region
+	else if (dnaChannel < 0){ // manual selection of analysis region
 		setTool("polygon");
 		waitForUser("Create analysis region and add to ROI manager (Ctrl+t)");
 
@@ -345,6 +331,11 @@ function makeMask(){
 			run("Select All");
 			roiManager("add");
 		}
+	}
+
+	else { //no mask
+		run("Select All");
+		roiManager("add");
 	}
 
 	// save ROI file

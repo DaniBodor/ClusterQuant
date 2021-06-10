@@ -35,6 +35,7 @@ if not os.path.exists(figureDir):
 
 starttime = datetime.now()
 
+exclude_zeroes  = False # include or exclude 0s from histogram
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = True # create histogram of spot data
 makeLineplot    = True # create a correlation graph between spots and intensities
@@ -44,14 +45,14 @@ cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
 
 #%% FUNCTIONS
-def make_histdf(df, ex_zeroes=True):
+def make_histdf(df):
     '''
     This function will create a frequency distribution dataframe used for histograms
     df: dataframe; input data
     MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
     ex_zeroes: boolean; exclude zero values from frequency distribution
     '''
-    if ex_zeroes:
+    if exclude_zeroes:
         df = df[df[spotName] != 0]
     
     df = (df.groupby(['Condition'])[spotName]

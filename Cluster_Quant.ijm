@@ -8,7 +8,7 @@ makeDebugTextWindow = 0;
 debugWindow = "Debugging";
 start = getTime();
 closeWinsWhenDone = true;	// turn off for debugging
-
+settingsTester = true;
 
 run ("Close All");
 print ("\\Clear");
@@ -57,9 +57,9 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" ANALYSIS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Window size", 		defaults[8],0,3, "pixels");
-	Dialog.addNumber("Window displacement",	defaults[9],0,3, "pixels");
-	Dialog.addNumber("Spot prominence",		defaults[10],0,3, "(higher is more exclusive)");	// prominence parameter from 'Find Maxima'
+	Dialog.addNumber("Window size", 		defaults[8],0,5, "pixels");
+	Dialog.addNumber("Window displacement",	defaults[9],0,5, "pixels");
+	Dialog.addNumber("Spot prominence",		defaults[10],0,5, "(higher is more exclusive)");	// prominence parameter from 'Find Maxima'
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
@@ -112,7 +112,7 @@ Dialog.create("Extended settings");
 	//Dialog.setInsets(0, 20, 0);
 	T_options = getList("threshold.methods");
 	Dialog.addChoice("DNA thresholding", T_options, defaults[15]);
-	Dialog.addNumber("Dilate iterations", defaults[16],0,3, "(after 1 erode iteration)");
+	Dialog.addNumber("Dilate iterations", defaults[16],0,3, "");
 	
 	//Dialog.setInsets(5,0,0);
 	Dialog.addMessage(" CROP BORDER");
@@ -126,7 +126,7 @@ if ( extended_settings ) Dialog.show();
 	
 	// Other
 	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy
-	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline	
+	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles for DAPI outline	
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 // save defaults
@@ -357,7 +357,6 @@ function clusterQuantification(){
 
 // step 1
 function makeMask(){
-
 	if (dnaChannel > 0) {
 		// prep images
 		selectImage(ori);
@@ -369,8 +368,8 @@ function makeMask(){
 		// make mask
 		setAutoThreshold(threshType+" dark");
 		run("Convert to Mask");
+		run("Fill Holes");
 		run("Erode");
-		for (i = 0; i < dilateCycles; i++)	run("Dilate");
 	
 		// find main cell from mask
 		run("Analyze Particles...", "display exclude clear include add");
@@ -382,6 +381,22 @@ function makeMask(){
 			if (area_0 < area_1)	roiManager("select", 0);	// else ROI 1 still selected
 			roiManager("delete");
 		}
+
+		roiManager("select", 0);
+		run("Invert");
+		run("Clear Outside");
+		run("Select None");
+		run("Invert");
+		for (i = 0; i < dilateCycles; i++)	run("Dilate");
+		run("Analyze Particles...", "display exclude clear include add");
+
+		if (settingsTester){
+			selectImage(ori);
+			setSlice(3);
+			roiManager("select", 0);
+			waitForUser("after update");
+		}
+		
 		close(mask);
 	}
 	
@@ -511,6 +526,7 @@ function measureClustering(){
 	Spots = newArray();
 	Intensities = newArray();
 	selectImage(spotIM);
+	if (settingsTester)		waitForUser("test 1");
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
 		Spots[roi] = getValue("IntDen");
@@ -519,6 +535,7 @@ function measureClustering(){
 	// Measure correlation (separate loop from above saves a lot of time!)
 	selectImage(ori);
 	setSlice(correlChanel);
+	if (settingsTester)		waitForUser("test 2");
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		// measure correl channel
 		roiManager("select",roi);

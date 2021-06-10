@@ -49,7 +49,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addToSameRow();	Dialog.addString("Name","Centromeres",12);
 	Dialog.addNumber("Correlation channel",	3,0,3, "correlate clustering with (0 to skip)"); // former: Microtubule channel
 	Dialog.addToSameRow();	Dialog.addString("Name","Intensity",12);
-	Dialog.addNumber("DNA channel",			1,0,3, "exclude background foci (0 to skip)"); // former: DNA channel
+	Dialog.addNumber("DNA channel",			1,0,3, "exclude background foci (0 to skip; -1 for manual)"); // former: DNA channel
 	//Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
 
 	Dialog.setInsets(10,0,0);
@@ -72,6 +72,7 @@ Dialog.show();	// retrieve input
 	// input/output
 	dir = Dialog.getString();
 	expName = Dialog.getString();
+	expName = replace(expName, " ", "_");
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
 	outdir = dir + "_" + expName + starttime + File.separator;
@@ -265,7 +266,7 @@ function clusterQuantification(){
 
 	// run sequential steps:
 		// step 1: get DAPI outline
-		if(dnaChannel > 0) makeMask();
+		if(dnaChannel != 0) makeMask();
 		// step 2: exclude regions
 		if (excludeRegions) 			setExcludeRegions();
 		else if (roiManager("count")>0) roiManager("save", ROIfile);
@@ -292,31 +293,59 @@ function clusterQuantification(){
 
 // step 1
 function makeMask(){
-	// prep images
-	selectImage(ori);
-	setSlice (dnaChannel);
-	run("Duplicate...", "duplicate channels=&dnaChannel");
-	run("Grays");
-	mask = getTitle();
 
-	// make mask
-	setAutoThreshold(threshType+" dark");
-	run("Convert to Mask");
-	run("Erode");
-	for (i = 0; i < dilateCycles; i++)	run("Dilate");
-
-	// find main cell in mask
-	run("Analyze Particles...", "display clear include add");
-
-	while ( roiManager("count") > 1){
-		roiManager("select", 0);
-		getStatistics(area_0);
-		roiManager("select", 1);
-		getStatistics(area_1);
-		if (area_0 < area_1)	roiManager("select", 0);	// else ROI 1 still selected
-		roiManager("delete");
+	if (dnaChannel >0) {
+		// prep images
+		selectImage(ori);
+		setSlice (dnaChannel);
+		run("Duplicate...", "duplicate channels=&dnaChannel");
+		run("Grays");
+		mask = getTitle();
+	
+		// make mask
+		setAutoThreshold(threshType+" dark");
+		run("Convert to Mask");
+		run("Erode");
+		for (i = 0; i < dilateCycles; i++)	run("Dilate");
+	
+		// find main cell in mask
+		run("Analyze Particles...", "display clear include add");
+	
+		while ( roiManager("count") > 1){
+			roiManager("select", 0);
+			getStatistics(area_0);
+			roiManager("select", 1);
+			getStatistics(area_1);
+			if (area_0 < area_1)	roiManager("select", 0);	// else ROI 1 still selected
+			roiManager("delete");
+		}
+		close(mask);
 	}
-	close(mask);
+	
+	else { // manual selection of analysis region
+		setTool("polygon");
+		waitForUser("Create analysis region and add to ROI manager (Ctrl+t)");
+
+		// at least 1 ROI added
+		if (roiManager("count") > 0){
+			// combine in case >1 ROI was added
+			roiManager("Combine");
+			roiManager("add");
+			while (roiManager("count") > 1) {
+				roiManager("select", 0);
+				roiManager("delete");
+			}
+		}
+		
+		// in case selection was made but not added to ROI list --> add to ROI list
+		else if (is("area"))	roiManager("add");	
+		
+		// no selection --> use entire frame
+		else {
+			run("Select All");
+			roiManager("add");
+		}
+	}
 
 	// save ROI file
 	selectImage(ori);
@@ -421,10 +450,10 @@ function measureClustering(){
 
 	// Measure correlation (separate loop from above saves a lot of time!)
 	selectImage(ori);
+	setSlice(correlChanel);
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		// measure correl channel
 		roiManager("select",roi);
-		setSlice(correlChanel);
 		getStatistics(rawArea, rawMean);
 		if (bgMeth == background_methods[2])	bgSignal = getLocalBackground();	// local bg correction
 		Intensities[roi] = rawMean - bgSignal; // background corrected intensity

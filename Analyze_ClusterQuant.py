@@ -159,15 +159,11 @@ if makeLineplot:
     max_spots = full_df[spotName].max() #for formatting
 
     for currcond in full_df.Condition.unique():
-        # generate and save correlation df per condition
+        # generate correlation df per condition
         cond_df = full_df[full_df.Condition == currcond]
         condname = currcond
-        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
         if MaxLength_CondName and len(condname) > MaxLength_CondName:
             condname = condname[:MaxLength_CondName-3] + '...'
-        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
-        if exclude_zeroes:
-            cond_df = excl_0(cond_df)
          
         # create line of all data per condition
         sns.lineplot  (x = spotName, y = yAxisName, data = cond_df, color = 'r')
@@ -180,7 +176,8 @@ if makeLineplot:
         plt.grid()
 #        plt.show()
         
-        # save violin plot
+        # save data and line plot
+        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
         figurePath =    os.path.join(figureDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()

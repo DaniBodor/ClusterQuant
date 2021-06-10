@@ -36,46 +36,37 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addMessage("Main data folder should contain one subfolder with data per experimental condition");
 	Dialog.setInsets(0, 20, 0);
 	Dialog.addDirectory("Main folder", main_data_default);
-	Dialog.addString("Experiment name", "ClusterQuant");
-	Dialog.addString("Image identifier", "D3D_PRJ.dv", "only file names containing this identifier will be read (leave empty to include all)");
-	Dialog.addString("Output folder name","_Results");
+	Dialog.addString("Experiment name", "ClusterQuant", 12);
+	Dialog.addString("Image identifier", "D3D_PRJ.dv", 12);
+	//Dialog.addToSameRow();
+	Dialog.setInsets(-35, 255, 0);
+	Dialog.addMessage("filenames without this identifier are excluded");
 
-	Dialog.setInsets(5,0,0);
+	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" SET CHANNEL ORDER");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Clustering channel",	4,0,3, "channel to measuring degree of clustering"); // former: Kinetochore channel
-	Dialog.addNumber("Correlation channel",	3,0,3, "channel to correlate degree of clustering with; use 0 to skip this step"); // former: Microtubule channel
-	Dialog.addNumber("DNA channel",			1,0,3, "used for excluding non-chromosomal foci; use 0 to skip this step"); // former: DNA channel
-	Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
+	Dialog.addNumber("Clustering channel",	4,0,3, "measure degree of clustering"); // former: Kinetochore channel
+	Dialog.addToSameRow();	Dialog.addString("Name","Centromeres",12);
+	Dialog.addNumber("Correlation channel",	3,0,3, "correlate clustering with (0 to skip)"); // former: Microtubule channel
+	Dialog.addToSameRow();	Dialog.addString("Name","Intensity",12);
+	Dialog.addNumber("DNA channel",			1,0,3, "exclude background foci (0 to skip)"); // former: DNA channel
+	//Dialog.addNumber("Other channel",		2,0,3, "currently unused"); // former: Corona channel
 
-	Dialog.setInsets(5,0,0);
+	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MEASUREMENT");
 	Dialog.setInsets(0,0,0);
 	Dialog.addNumber("Window size", 		 16,0,3, "pixels");
 	Dialog.addNumber("Window displacement",	  4,0,3, "pixels");
-	Dialog.addNumber("Spot prominence",		150,0,3, "Higher numbers are more exclusive");	// prominence parameter from 'Find Maxima'
+	Dialog.addNumber("Spot prominence",		150,0,3, "(higher value is more exclusive)");	// prominence parameter from 'Find Maxima'
 
-	Dialog.setInsets(5,0,0);
-	Dialog.addMessage(" BACKGROUND CORRECTION");
-	Dialog.setInsets(0,0,2);
-	background_methods = newArray("None", "Global", "Local");
-	Dialog.addChoice("Background correction", background_methods, background_methods[2]);
-	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
-	
-	Dialog.setInsets(5,0,0);
-	Dialog.addMessage(" NUCLEUS OUTLINING");
-	Dialog.setInsets(0,0,2);
-	T_options = getList("threshold.methods");
-	Dialog.addChoice("DNA thresholding", T_options, "Huang");		// potentially use RenyiEntropy?
-	Dialog.addNumber("Gaussian blur radius",		40,0,3, "pixels");
-	Dialog.addNumber("Dilate cycles",		 4,0,3, "pixels (after 1 erode cycle)");
-
-	Dialog.setInsets(0,0,0);
-	Dialog.addMessage(" OTHER");
+	Dialog.setInsets(10,0,0);
+	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
 	Dialog.setInsets(0, 20, 0);
 	Dialog.addCheckbox("Exclude regions", 0);
 	Dialog.addCheckbox("Load previously excluded regions", 1);
-	Dialog.addNumber("Deconvolution border", 	 16,0,3, "pixels (16 is default for DV; 0 for no cropping");
+
+	Dialog.setInsets(20,0,0);
+	Dialog.addCheckbox("SHOW EXTENDED SETTINGS", 0);
 
 Dialog.show();	// retrieve input
 	// input/output
@@ -83,42 +74,70 @@ Dialog.show();	// retrieve input
 	expName = Dialog.getString();
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
-	outdir = dir + Dialog.getString() + File.separator;
-		File.makeDirectory(outdir);
-		roiDir = outdir + expName + "_ROIs" + File.separator;
-		File.makeDirectory(roiDir);
-		subdirs = getFileList (dir);
+	outdir = dir + "_" + expName + starttime + File.separator;
 
 	// channel order
 	clusterChannel = 	Dialog.getNumber(); // former KTchannel
 	correlChanel =		Dialog.getNumber(); // former MTchannelro
 	dnaChannel =		Dialog.getNumber(); // former DNAchannel
-	otherChannel =		Dialog.getNumber(); // former COROchannel
+	//otherChannel =		Dialog.getNumber(); // former COROchannel
+	clusterName =		Dialog.getString(); // for x-axis title
+	correlName =		Dialog.getString(); // for y-axis title
 
 	// measurement parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
 	winDisplacement =	Dialog.getNumber(); // pixel displacement of grid at each step
 	prominence =		Dialog.getNumber();	// prominence value of find maxima function
 
+	// Manual ROI exclusion
+	excludeRegions =	Dialog.getCheckbox();
+	preloadRegions =	Dialog.getCheckbox();
+
+	extended_settings = Dialog.getCheckbox();
+	
+
+// 2nd dialog
+Dialog.create("Extended settings");
+	Dialog.setInsets(0,0,0);
+	Dialog.addMessage(" BACKGROUND CORRECTION");
+	Dialog.setInsets(0,0,2);
+	background_methods = newArray("None", "Global", "Local");
+	Dialog.addChoice("Correction method", background_methods, background_methods[2]);
+	Dialog.addNumber("Local background width", 	 2,0,3, "pixels (only used for local background)");
+
+	//Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" DNA DETECTION");
+	//Dialog.setInsets(0, 20, 0);
+	T_options = getList("threshold.methods");
+	Dialog.addChoice("DNA thresholding", T_options, "Huang");		// potentially use RenyiEntropy?
+	Dialog.addNumber("Dilate iterations", 4,0,3, "(after 1 erode iteration)");
+	
+	//Dialog.setInsets(5,0,0);
+	Dialog.addMessage(" CROP BORDER");
+	Dialog.addNumber("Deconvolution border", 0,0,3, "pixels (16 is default for DV; 0 for no cropping)");
+
+
+if ( extended_settings ) Dialog.show();
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
 	
-	// Nuclear outline
-	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy?
-	gaussSigma = 	Dialog.getNumber();	// currently unused
-	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline
-
 	// Other
-	excludeRegions =	Dialog.getCheckbox();
-	preloadRegions =	Dialog.getCheckbox();
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
+	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy
+	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles (after 1 erode cycle) for DAPI outline	
 
 
+// Create output directories
+File.makeDirectory(outdir);
+roiDir = outdir + "ROIs" + File.separator;
+File.makeDirectory(roiDir);
+subdirs = getFileList (dir);
 
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
+print("****", clusterName, correlName);
 
 
 // loop through individual conditions within base data folder
@@ -225,7 +244,7 @@ function getLocalBackground(){
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + expName + "_PythonInput" + starttime + ".csv");
+	saveAs("Text", outdir + "_PythonInput.csv");
 }
 
 ////////////////////////////////////////////////////////

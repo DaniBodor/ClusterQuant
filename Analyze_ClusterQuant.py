@@ -12,49 +12,31 @@ Created on Mon Mar  9 14:13:59 2020
 
 
 
-import tkinter as tk
-from tkinter import filedialog as fd
-import numpy as np
-import pandas as pd
-#import itertools
-import os
-from datetime import datetime
-import matplotlib.pyplot as plt
-from random import seed as rseed
-import seaborn as sns
-from pathlib import Path
+import tkinter as tk # non-essential
+from tkinter import filedialog as fd # non-essential
+import numpy as np # probably can find a way around this
+import pandas as pd # VERY essential
+import os # possibly can find a way around this
+from datetime import datetime # non-essential
+import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
+import seaborn as sns # essential for outputting figures, not CSVs
 
-top = tk.Tk()
-#checkbox1 = tk.IntVar()
-#c1 = tk.Checkbutton(top, text="test 1", height=5, width = 20, 
-#                    onvalue = 1, offvalue = 0, variable = checkbox1)
-#c1.pack()
-#top.mainloop()
-#top.focus_force()
-top.withdraw()
 
+# open file dialog
 print('find file open window!')
+top = tk.Tk()
+top.withdraw()
+csvInputPath = os.path.abspath( fd.askopenfilename() )
 
-csvPath = os.path.abspath( fd.askopenfilename() )
-csvFile = os.path.basename(csvPath)
-expName = csvFile[:csvFile.find("_Python")]
-
-
-#csvFile = os.path.abspath(r'C:/Users/dani/Documents/MyCodes/ClusterQuant/data/test_data/_Results/Log_210607_1703.csv')
-data_dir = os.path.abspath(os.path.join(csvPath, os.pardir))
-figureDir = os.path.join(data_dir, expName + '_PythonOutput')
-
+# get relevant path info from input
+csvInputFile = os.path.basename(csvInputPath)
+dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
+expName = os.path.basename(dataDir)
+figureDir = os.path.join(dataDir, 'Data')
 if not os.path.exists(figureDir):
     os.mkdir(figureDir)
 
 starttime = datetime.now()
-rseed(22)
-
-
-
-# move below into dialog window once I figure out how
-spotName = 'Spots'
-yAxisName = 'Intensity'
 
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = True # create histogram of spot data
@@ -112,13 +94,16 @@ def name_cleaner(name):
 
 if readData:
     
-    with open (csvPath, "r") as myfile:
+    with open (csvInputPath, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
-    full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
 
     Condition,Cell = '',''
     for i,l in enumerate(lines):
-        if l.startswith('***'):
+        if l.startswith('****'):
+            spotName    = l.split(' ')[1]
+            yAxisName   = l.split(' ')[2]
+            full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
+        elif l.startswith('***'):
             Condition = l[3:-1]
         elif l.startswith('**'):
             Cell = name_cleaner(l[2:-1])
@@ -156,8 +141,8 @@ if makeHisto:
     
     
     # save plot and data
-    figurePath =         os.path.join(figureDir, expName + '_hist.png')
-    histogram_df.to_csv( os.path.join(figureDir, expName + '_hist.csv') )
+    figurePath =         os.path.join(figureDir, 'Histogram.png')
+    histogram_df.to_csv( os.path.join(figureDir, 'Histogram.csv') )
     plt.savefig(    figurePath, dpi=600)
 #    plt.show()
     plt.clf()
@@ -193,8 +178,8 @@ if makeLineplot:
 #        plt.show()
         
         # save violin plot and data
-        cond_df.to_csv( os.path.join(figureDir, expName + '_' + condname  + '_correlation.csv'))
-        figurePath =    os.path.join(figureDir, expName + '_' + condname  + '_correlation.png')
+        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
+        figurePath =    os.path.join(figureDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()
 

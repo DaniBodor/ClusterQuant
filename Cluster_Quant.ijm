@@ -138,7 +138,7 @@ defaults = export_defaults();
 
 // Create output directories
 File.makeDirectory(outdir);
-roiDir = outdir + "ROIs" + File.separator;
+roiDir = outdir + "ROIs" + starttime + File.separator;
 File.makeDirectory(roiDir);
 subdirs = getFileList (dir);
 
@@ -152,9 +152,9 @@ print("****", clusterName, correlName, gridSize, winDisplacement);
 for (d = 0; d < subdirs.length; d++) {
 	subdirname = dir + subdirs [d];
 
-	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
+	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir) && !startsWith(File.getName(subdirname),"_")) {
 		filelist = getFileList (subdirname);
-		subout = roiDir + File.getName(subdirname) + "_ROIs_" + starttime + File.separator;
+		subout = roiDir + File.getName(subdirname) + "_ROIs" + File.separator;
 		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 

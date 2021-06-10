@@ -4,7 +4,7 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'C:\Users\dani\Documents\MyCodes\ClusterQuant\data\testData\_ClusterQuant'
+dataDir = r'.\data\testData\_ClusterQuant'
 
 #%% test above
 
@@ -83,7 +83,7 @@ def name_cleaner(name):
 
 if readData:
     
-    with open (dataDir + csvInputFile, "r") as myfile:
+    with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
 
     Condition,Cell = '',''

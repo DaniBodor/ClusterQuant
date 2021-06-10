@@ -4,13 +4,16 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-
+dataDir = r'C:\Users\dani\Documents\MyCodes\ClusterQuant\data\testData\_ClusterQuant'
 
 #%% test above
 
 
-import tkinter as tk # non-essential
-from tkinter import filedialog as fd # non-essential
+
+
+
+#import tkinter as tk # non-essential
+#from tkinter import filedialog as fd # non-essential
 import numpy as np # probably can find a way around this
 import pandas as pd # VERY essential
 import os # possibly can find a way around this
@@ -20,15 +23,20 @@ import seaborn as sns # essential for outputting figures, not CSVs
 
 
 # open file dialog
-print('find file open window!')
-top = tk.Tk()
-top.withdraw()
-csvInputPath = os.path.abspath( fd.askopenfilename() )
+#print('find file open window!')
+#top = tk.Tk()
+#top.withdraw()
+#csvInputPath = os.path.abspath( fd.askopenfilename() )
 
 # get relevant path info from input
-csvInputFile = os.path.basename(csvInputPath)
+
+files = os.listdir(dataDir)
+csvInputFile = [f for f in files if 'Python' in f][0]
+#csvInputPath = os.path.join(dataDir, csvInputFile)
+
+#csvInputFile = os.path.basename(csvInputPath)
 timestamp = csvInputFile[-14:-4]
-dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
+#dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
 expName = os.path.basename(dataDir)
 figureDir = os.path.join(dataDir, 'Results_' + timestamp)
 

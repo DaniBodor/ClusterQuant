@@ -27,11 +27,10 @@ csvInputPath = os.path.abspath( fd.askopenfilename() )
 
 # get relevant path info from input
 csvInputFile = os.path.basename(csvInputPath)
+timestamp = csvInputFile[-14:-4]
 dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
 expName = os.path.basename(dataDir)
-figureDir = os.path.join(dataDir, 'Results')
-if not os.path.exists(figureDir):
-    os.mkdir(figureDir)
+figureDir = os.path.join(dataDir, 'Results_' + timestamp)
 
 starttime = datetime.now()
 
@@ -101,9 +100,12 @@ if readData:
             spotName    = l.split(' ')[1]
             yAxisName   = l.split(' ')[2]
             windowSize  = l.split(' ')[3]
-            winDisplace = l.split(' ')[4]
+            winDisplace = l.split(' ')[4].strip()
             full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
             figureDir = figureDir + f'_size{windowSize}_displ{winDisplace}'
+            if not os.path.exists(figureDir):
+                os.mkdir(figureDir)
+
         elif l.startswith('***'):
             Condition = l[3:-1]
         elif l.startswith('**'):

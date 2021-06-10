@@ -10,10 +10,6 @@ dataDir = r'C:\Users\dani\Documents\MyCodes\ClusterQuant\data\testData\_ClusterQ
 
 
 
-
-
-#import tkinter as tk # non-essential
-#from tkinter import filedialog as fd # non-essential
 import numpy as np # probably can find a way around this
 import pandas as pd # VERY essential
 import os # possibly can find a way around this
@@ -22,21 +18,9 @@ import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
 import seaborn as sns # essential for outputting figures, not CSVs
 
 
-# open file dialog
-#print('find file open window!')
-#top = tk.Tk()
-#top.withdraw()
-#csvInputPath = os.path.abspath( fd.askopenfilename() )
 
-# get relevant path info from input
-
-files = os.listdir(dataDir)
-csvInputFile = [f for f in files if 'Python' in f][0]
-#csvInputPath = os.path.join(dataDir, csvInputFile)
-
-#csvInputFile = os.path.basename(csvInputPath)
+csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][0]
 timestamp = csvInputFile[-14:-4]
-#dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
 expName = os.path.basename(dataDir)
 figureDir = os.path.join(dataDir, 'Results_' + timestamp)
 

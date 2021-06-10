@@ -83,7 +83,7 @@ def name_cleaner(name):
 
 if readData:
     
-    with open (csvInputPath, "r") as myfile:
+    with open (dataDir + csvInputFile, "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
 
     Condition,Cell = '',''
@@ -160,14 +160,12 @@ if makeLineplot:
             condname = condname[:MaxLength_CondName-3] + '...'
           
         # create line of all data per condition
-#        sns.violinplot(x =spotName, y=yAxisName, data=cond_df, scale="width", color = 'lightskyblue')
         sns.lineplot  (x = spotName, y = yAxisName, data = cond_df, color = 'r')
         
         plt.title(condname)
         plt.xlabel(spotName)
         plt.ylabel(yAxisName)
         plt.xlim(-0.5, max_spots + 0.5 )
-#        plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
         plt.xticks(range(max_spots+1))
         plt.grid()
 #        plt.show()

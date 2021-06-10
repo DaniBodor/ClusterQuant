@@ -8,7 +8,6 @@ makeDebugTextWindow = 0;
 debugWindow = "Debugging";
 start = getTime();
 closeWinsWhenDone = true;	// turn off for debugging
-settingsTester = true;
 
 run ("Close All");
 print ("\\Clear");
@@ -55,11 +54,10 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addNumber("DNA channel",			defaults[7],0,3, "0 to skip; -1 for manual"); // former: DNA channel
 
 	Dialog.setInsets(10,0,0);
-	Dialog.addMessage(" ANALYSIS");
+	Dialog.addMessage(" SLIDING WINDOWS");
 	Dialog.setInsets(0,0,0);
 	Dialog.addNumber("Window size", 		defaults[8],0,5, "pixels");
 	Dialog.addNumber("Window displacement",	defaults[9],0,5, "pixels");
-	Dialog.addNumber("Spot prominence",		defaults[10],0,5, "(higher is more exclusive)");	// prominence parameter from 'Find Maxima'
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
@@ -67,8 +65,11 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addCheckbox("Exclude regions", defaults[11]);
 	Dialog.addCheckbox("Load previously excluded regions", defaults[12]);
 
-	Dialog.setInsets(20,0,0);
-	Dialog.addCheckbox("SHOW EXTENDED SETTINGS", 0);
+	Dialog.setInsets(10,0,0);
+	Dialog.addMessage(" EXTENDED SETTINGS");
+	Dialog.setInsets(0, 20, 0);
+	Dialog.addCheckbox("Test extended settings", 0);
+	Dialog.addCheckbox("Show extended settings", 0);
 
 Dialog.show();	// retrieve input
 	// input/output
@@ -86,17 +87,17 @@ Dialog.show();	// retrieve input
 	clusterName =		Dialog.getString(); // for x-axis title
 	correlName =		Dialog.getString(); // for y-axis title
 
-	// measurement parameters
+	// grid parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
 	winDisplacement =	Dialog.getNumber(); // pixel displacement of grid at each step
-	prominence =		Dialog.getNumber();	// prominence value of find maxima function
 
 	// Manual ROI exclusion
 	excludeRegions =	Dialog.getCheckbox();
 	preloadRegions =	Dialog.getCheckbox();
 
+	// Extended settings
+	settingsTester = 	Dialog.getCheckbox();
 	extended_settings = Dialog.getCheckbox();
-	
 
 // 2nd dialog
 Dialog.create("Extended settings");
@@ -108,11 +109,12 @@ Dialog.create("Extended settings");
 	Dialog.addNumber("Local background width", defaults[14],0,3, "pixels (only used for local background)");
 
 	//Dialog.setInsets(5,0,0);
-	Dialog.addMessage(" DNA DETECTION");
+	Dialog.addMessage(" DNA AND SPOT DETECTION");
 	//Dialog.setInsets(0, 20, 0);
 	T_options = getList("threshold.methods");
 	Dialog.addChoice("DNA thresholding", T_options, defaults[15]);
-	Dialog.addNumber("Dilate iterations", defaults[16],0,3, "");
+	Dialog.addNumber("Dilate cycles", defaults[16],0,3, "");
+	Dialog.addNumber("Spot prominence",	defaults[10],0,5, "(higher is more exclusive)");	// prominence parameter from 'Find Maxima'
 	
 	//Dialog.setInsets(5,0,0);
 	Dialog.addMessage(" CROP BORDER");
@@ -123,14 +125,15 @@ if ( extended_settings ) Dialog.show();
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
-	
-	// Other
+	// Detection settings
 	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy
-	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles for DAPI outline	
+	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles for DAPI outline
+	prominence =	Dialog.getNumber();	// prominence value of find maxima function
+	// Crop border
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
 // save defaults
-export_defaults();
+defaults = export_defaults();
 
 
 // Create output directories
@@ -142,7 +145,7 @@ subdirs = getFileList (dir);
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
-print("****", clusterName, correlName);
+print("****", clusterName, correlName, gridSize, winDisplacement);
 
 
 // loop through individual conditions within base data folder
@@ -151,7 +154,7 @@ for (d = 0; d < subdirs.length; d++) {
 
 	if (File.isDirectory(subdirname) && File.getName(subdirname) != File.getName(outdir)) {
 		filelist = getFileList (subdirname);
-		subout = roiDir + File.getName(subdirname) + "_ROIs" + File.separator;
+		subout = roiDir + File.getName(subdirname) + "_ROIs_" + starttime + File.separator;
 		File.makeDirectory(subout);
 		print("***" + File.getName(subdirname));
 
@@ -179,6 +182,8 @@ for (d = 0; d < subdirs.length; d++) {
 // print end time and save log
 print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
 print(nondataprefix, "Total duration:", round((getTime() - start)/100)/10, "seconds");
+defaults = Array.concat(nondataprefix + " Parameters used:", defaults);
+Array.print(defaults);
 print(nondataprefix, "All done");
 
 saveLog();
@@ -310,6 +315,51 @@ function export_defaults(){
 	selectWindow("Log");
 	saveAs("Text", defaults_file);
 	print("\\Clear");
+
+	return defaults;
+}
+
+function test_1(){
+	selectImage(ori);
+	setSlice(3);
+	roiManager("Show All without labels");
+	roiManager("Show None");
+	roiManager("deselect");
+	run("From ROI Manager");
+
+	run("Duplicate...", "title=DNA_channel duplicate channels=4");
+	run("Tile");
+	selectImage(3);
+	run("Threshold...");
+	setAutoThreshold(threshType);
+	resetMinAndMax();
+	
+	waitForUser("Check if selection contains all spots: \n \n" + 
+			"- if consistently too large/small: change dilate cycles (higher cycle number = larger area; currently: " + dilateCycles + ").\n" +
+			"- if completely off, test other threshold method on DNA channel (current default is: " + threshType +").\n" +
+			" \nYou can change these parameters in the extended settings window when starting this macro,\nand they will be stored as default in ImageJ");
+	
+	close("DNA_channel");
+	selectImage(ori);
+	run("Remove Overlay");
+}
+
+function test_2(){
+	run("Tile");
+	roiManager("Combine");
+	roiManager("add");
+	for (i = 1; i <= nImages; i++) {
+		selectImage(i);
+		roiManager("Show None");
+		roiManager("select", roiManager("count")-1);
+	}
+	selectImage(ori);
+	waitForUser("Check whether spot recognition seems OK (spots outside the ROI can be ignored).\n" +
+			" \nIf this looks wrong, test to find a good 'Prominence' factor using\n" + 
+			"'Process > Find Maxima...' and use 'Preview point selection' to find a good value.\n" +
+			"Current default prominence: " + prominence + ".\n" +
+			" \nYou can change this parameter in the extended settings window when starting this macro,\nand it will be stored as default in ImageJ");
+	roiManager("delete");
 }
 
 ////////////////////////////////////////////////////////
@@ -390,12 +440,7 @@ function makeMask(){
 		for (i = 0; i < dilateCycles; i++)	run("Dilate");
 		run("Analyze Particles...", "display exclude clear include add");
 
-		if (settingsTester){
-			selectImage(ori);
-			setSlice(3);
-			roiManager("select", 0);
-			waitForUser("after update");
-		}
+		if (settingsTester)	test_1();
 		
 		close(mask);
 	}
@@ -525,8 +570,10 @@ function measureClustering(){
 	// count number of CEN spots
 	Spots = newArray();
 	Intensities = newArray();
+	
+	if (settingsTester)	test_2();
+	
 	selectImage(spotIM);
-	if (settingsTester)		waitForUser("test 1");
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
 		Spots[roi] = getValue("IntDen");
@@ -535,7 +582,6 @@ function measureClustering(){
 	// Measure correlation (separate loop from above saves a lot of time!)
 	selectImage(ori);
 	setSlice(correlChanel);
-	if (settingsTester)		waitForUser("test 2");
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		// measure correl channel
 		roiManager("select",roi);

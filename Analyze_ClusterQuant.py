@@ -4,11 +4,11 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\testData\_ClusterQuant'
+dataDir = r'.\data\Kim_Dataset_2\_ClusterQuant'
 exclude_zeroes  = True # include or exclude 0s from histogram
 
 
-#%% test above
+#%%
 
 
 
@@ -20,23 +20,23 @@ import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
 import seaborn as sns # essential for outputting figures, not CSVs
 
 
-
 csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][0]
 timestamp = csvInputFile[-14:-4]
 expName = os.path.basename(dataDir)
-figureDir = os.path.join(dataDir, 'Results_' + timestamp)
+outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 
 starttime = datetime.now()
 
-readData        = True # reads data from file; set to False to save time when re-analyzing previous
+readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = True # create histogram of spot data
-makeLineplot    = True # create a correlation graph between spots and intensities
-makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
+makeLineplot    = 0 # create a correlation graph between spots and intensities
+makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
 
 #%% FUNCTIONS
+#%%
 def make_histdf(df):
     '''
     This function will create a frequency distribution dataframe used for histograms
@@ -44,19 +44,22 @@ def make_histdf(df):
     MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
     '''
 
+#    if exclude_zeroes:
+#        df = df[df[spotName] != 0]
+
     df = (df.groupby(['Condition'])[spotName]
                      .value_counts(normalize=True)
-                     .rename('frequency')
+                     .rename('Frequency')
                      .reset_index()
-                     .sort_values(spotName))
+                     .sort_values('Condition'))
+
     
     if MaxLength_CondName:
         df = shorten_column_name(df, 'Condition', MaxLength_CondName)
     
     return df
 
-
-
+#%%
 def shorten_column_name(df,column,L):
     long_cond_names = list(df.Condition.unique())
     short_cond_names = [x[:L-3]+'...' if len(x)>L else x for x in long_cond_names]
@@ -64,7 +67,7 @@ def shorten_column_name(df,column,L):
     
     return df
 
-
+#%%
 def name_cleaner(name):
     for x in cleanup:
         name = name.replace(x, '')
@@ -77,14 +80,17 @@ def name_cleaner(name):
     
     return name
 
+#%%
 def excl_0(df):
     df = df[df[spotName] != 0]
     return df
-        
-        
-#%% READ AND ORDER DATA
 
+
+#%% MAIN       
+
+#%% READ AND ORDER DATA
 if readData:
+    print ('reading input data')
     
     with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
@@ -97,9 +103,9 @@ if readData:
             windowSize  = l.split(' ')[3]
             winDisplace = l.split(' ')[4].strip()
             full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
-            figureDir = figureDir + f'_size{windowSize}_displ{winDisplace}'
-            if not os.path.exists(figureDir):
-                os.mkdir(figureDir)
+            outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
+            if not os.path.exists(outputDir):
+                os.mkdir(outputDir)
 
         elif l.startswith('***'):
             Condition = l[3:-1]
@@ -116,23 +122,26 @@ if readData:
             celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(celldf)                # add cell to dataframe
     full_df = full_df [['Condition', 'Cell', spotName, yAxisName]]    # reorder columns
-
-
+    nConditions = len(full_df.Condition.unique())
 
 
 #%% MAKE HISTOGRAM
 
 if makeHisto:
-
+    print ('generating histogram')
+    
     # make and export histogram
-    histogram_df = make_histdf(full_df)    
-    histogram_df.to_csv( os.path.join(figureDir, 'Histogram.csv') )
+    histogram_df = make_histdf(full_df)
+    histogram_df.to_csv( os.path.join(outputDir, 'Histogram.csv') )
     
     if exclude_zeroes:
         histogram_df = excl_0(histogram_df)
 
     # generate plot
-    sns.barplot(x=spotName, y="frequency", hue="Condition", data=histogram_df)
+    if nConditions < 4:
+        sns.barplot (x=spotName, y="Frequency", hue="Condition", data=histogram_df)
+    else:
+        sns.lineplot(x=spotName, y="Frequency", hue="Condition", data=histogram_df)
     
     # plot formatting
     plt.legend(prop={'size': 12})
@@ -142,8 +151,8 @@ if makeHisto:
     plt.grid(axis='y')
      
     # save plot
-    figurePath =         os.path.join(figureDir, 'Histogram.png')
-    plt.savefig(    figurePath, dpi=600)
+    figurePath = os.path.join(outputDir, 'Histogram.png')
+    plt.savefig(figurePath, dpi=600)
 #    plt.show()
     plt.clf()
 
@@ -151,14 +160,16 @@ if makeHisto:
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
 if makeLineplot:
+    
     # figure output directory
-    violinFigDir = os.path.abspath(os.path.join(figureDir, 'ViolinFigs'))
+    violinFigDir = os.path.abspath(os.path.join(outputDir, 'ViolinFigs'))
     if not os.path.exists(violinFigDir):
         os.mkdir(violinFigDir)
     
     max_spots = full_df[spotName].max() #for formatting
 
     for currcond in full_df.Condition.unique():
+        print (f'making correlation diagram for {currcond}')
         # generate correlation df per condition
         cond_df = full_df[full_df.Condition == currcond]
         condname = currcond
@@ -177,13 +188,15 @@ if makeLineplot:
 #        plt.show()
         
         # save data and line plot
-        cond_df.to_csv( os.path.join(figureDir, condname  + '_Correlation.csv'))
-        figurePath =    os.path.join(figureDir, condname  + '_Correlation.png')
+        cond_df.to_csv( os.path.join(outputDir, condname  + '_Correlation.csv'))
+        figurePath =    os.path.join(outputDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()
 
         if makeViolinplots:
         # create violin of data per cell
+            count = len(cond_df.Cell.unique())
+            print(f'generating violinplots for {currcond} ({count} total): ', end='')
             for i,currcell in enumerate(cond_df.Cell.unique()):
                 print (i,end=',')
                 violin_df = cond_df[cond_df.Cell == currcell]
@@ -214,3 +227,8 @@ if makeLineplot:
                 plt.savefig(figurePath, dpi=600)
     #            plt.show()
                 plt.clf()
+            print('')
+
+
+print('')
+print('all done!')

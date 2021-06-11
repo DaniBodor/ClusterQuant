@@ -5,7 +5,7 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 dataDir = r'.\data\Kim_Dataset_2\_ClusterQuant'
-exclude_zeroes  = True # include or exclude 0s from histogram
+exclude_zeroes  = False # include or exclude 0s from histogram
 
 
 #%%
@@ -44,20 +44,33 @@ def make_histdf(df):
     MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
     '''
 
-#    if exclude_zeroes:
-#        df = df[df[spotName] != 0]
-
-    df = (df.groupby(['Condition'])[spotName]
+    # Get counts
+    output_df = (df.groupby(['Condition'])[spotName]
+                     .value_counts()
+                     .rename('Counts')
+                     .reset_index() )
+    # Get counts and pass to output_df
+    df2 = (df.groupby(['Condition'])[spotName]
                      .value_counts(normalize=True)
                      .rename('Frequency')
-                     .reset_index()
-                     .sort_values('Condition'))
+                     .reset_index() )
+    output_df['Frequency'] = df2['Frequency']
+    
+    # Get 0-free frequencies
+    with pd.option_context('mode.chained_assignment',None):
+        output_df['Excl_0'] = output_df['Counts']
+        zeroes = output_df[spotName] == 0
+        output_df['Excl_0'][zeroes] = np.nan
+        
+        sum_df = output_df.groupby(["Condition"])['Excl_0'].sum().reset_index()
+        for i,f in enumerate(output_df['Excl_0']):
+            output_df['Excl_0'][i] = f / sum_df['Excl_0'][sum_df['Condition'] == output_df['Condition'][i]]
 
     
     if MaxLength_CondName:
         df = shorten_column_name(df, 'Condition', MaxLength_CondName)
     
-    return df
+    return output_df
 
 #%%
 def shorten_column_name(df,column,L):
@@ -132,16 +145,21 @@ if makeHisto:
     
     # make and export histogram
     histogram_df = make_histdf(full_df)
-    histogram_df.to_csv( os.path.join(outputDir, 'Histogram.csv') )
+    try:
+        histogram_df.to_csv( os.path.join(outputDir, 'Histogram.csv') )
+    except PermissionError:
+        print('could not save histogram csv')
     
     if exclude_zeroes:
-        histogram_df = excl_0(histogram_df)
+        y_data = 'Excl_0'
+    else:
+        y_data = 'Frequency'
 
     # generate plot
     if nConditions < 4:
-        sns.barplot (x=spotName, y="Frequency", hue="Condition", data=histogram_df)
+        sns.barplot (x=spotName, y=y_data, hue="Condition", data=histogram_df)
     else:
-        sns.lineplot(x=spotName, y="Frequency", hue="Condition", data=histogram_df)
+        sns.lineplot(x=spotName, y=y_data, hue="Condition", data=histogram_df)
     
     # plot formatting
     plt.legend(prop={'size': 12})

@@ -341,6 +341,10 @@ function test_1(){
 
 	run("Duplicate...", "title=DNA_channel duplicate channels=4");
 	run("Tile");
+	for (id = 1; id <= nImages; id++) {
+		selectImage(id);
+		resetMinAndMax;
+	}
 	selectImage(3);
 	run("Threshold...");
 	setAutoThreshold(threshType);
@@ -358,6 +362,10 @@ function test_1(){
 
 function test_2(){
 	run("Tile");
+	for (id = 1; id <= nImages; id++) {
+		selectImage(id);
+		resetMinAndMax;
+	}
 	roiManager("Combine");
 	roiManager("add");
 	for (i = 1; i <= nImages; i++) {
@@ -459,8 +467,18 @@ function makeMask(){
 	
 	else if (dnaChannel < 0){ // manual selection of analysis region
 		setSlice(dnaChannel * -1);
-		setTool("polygon");
+		Stack.setDisplayMode("grayscale");
+		run("Duplicate...", "duplicate channels=&dnaChannel");
+		mask = getTitle();
+		run("Tile");
+		for (id = 1; id <= nImages; id++) {
+			selectImage(id);
+			resetMinAndMax;
+		}
+		setAutoThreshold("MinError dark");
+		setTool("wand");
 		waitForUser("Create analysis region and add to ROI manager (Ctrl+t)");
+		selectImage(nImages);
 
 		// at least 1 ROI added
 		if (roiManager("count") > 0){
@@ -481,8 +499,17 @@ function makeMask(){
 			run("Select All");
 			roiManager("add");
 		}
+		
+		run("Convert to Mask");
+		run("Erode");
+		for (i = 0; i < dilateCycles; i++)	run("Dilate");
+		roiManager("select", 0);
+		getSelectionBounds(_x_, _y_, _, _);
+		doWand(_x_, _y_);
+		roiManager("update");
+		close(mask);
 	}
-
+	
 	else { //no mask
 		run("Select All");
 		roiManager("add");
@@ -572,7 +599,12 @@ function measureClustering(){
 
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
 	spotIM = getTitle();
-
+	run("Tile");
+	for (id = 1; id <= nImages; id++) {
+		selectImage(id);
+		resetMinAndMax;
+	}
+	
 	// get global bg
 	bgSignal = 0;	// for no background correction
 	if (bgMeth == background_methods[1]) {	// global bg correction
@@ -585,7 +617,7 @@ function measureClustering(){
 	Intensities = newArray();
 	
 	if (settingsTester)	test_2();
-	
+
 	selectImage(spotIM);
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);

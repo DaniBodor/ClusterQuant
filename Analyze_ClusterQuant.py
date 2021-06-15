@@ -5,7 +5,6 @@ Created on Mon Mar  9 14:13:59 2020
 """
 
 dataDir = r'.\data\JW_test_210515\_ClusterQuant'
-exclude_zeroes  = False # include or exclude 0s from histogram
 
 
 #%%
@@ -30,7 +29,7 @@ starttime = datetime.now()
 readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = 1 # create histogram of spot data
 makeLineplot    = 1 # create a correlation graph between spots and intensities
-makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
+makeViolinplots = 1 # make a violinplot for each cell showing intensity by spot count
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -177,36 +176,33 @@ if readData:
 #%% MAKE HISTOGRAM
 
 if makeHisto:
-    print ('generating histogram')
-    
+    print ('generating histograms')
+
     # make and export histogram
     histogram_df = make_histdf(full_df)
     save_csv(histogram_df, 'Histogram')
     
-    if exclude_zeroes:
-        y_data = Freq_no0
-    else:
-        y_data = Freq
-
-    # generate plot
-    if nFolders < 4:
-        sns.barplot (x=spotName, y=y_data, hue=Cond, data=histogram_df)
-    else:
-        sns.lineplot(x=spotName, y=y_data, hue=Cond, data=histogram_df)
-    
-    # plot formatting
-    plt.legend(prop={'size': 12})
-    plt.title(f'{spotName} per {windowSize}x{windowSize} square')
-    plt.xlabel(spotName)
-    plt.ylabel(Freq)
-    plt.grid(axis='y')
-    if exclude_zeroes:
-        plt.xlim(left=0.5)
-    # save plot
-    figurePath = os.path.join(outputDir, 'Histogram.png')
-    plt.savefig(figurePath, dpi=600)
-#    plt.show()
-    plt.clf()
+    y_data = [Freq,Freq_no0]
+    for x in range(2):
+        # generate plot
+        if nFolders < 4:
+            sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
+        else:
+            sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
+        
+        # plot formatting
+        plt.legend(loc = 1, prop={'size': 12})
+        plt.title(f'{spotName} per {windowSize}x{windowSize} square')
+#        plt.xlabel(spotName)
+        plt.ylabel(Freq)
+        plt.grid(axis='y', lw = 0.5)
+        if x == 1:
+            plt.xlim(left=0.5)
+        # save plot
+        figurePath = os.path.join(outputDir, f'Histogram_{x}-based.png')
+        plt.savefig(figurePath, dpi=600)
+    #    plt.show()
+        plt.clf()
 
 
 #%% MAKE INDIVIDUAL VIOLINPLOTS
@@ -222,9 +218,10 @@ if makeLineplot:
     
     # formatting
     plt.title(f'{spotName} vs {yAxisName}')
+    plt.legend(loc = 1, prop={'size': 12})
     plt.grid(lw = 0.5)
     
-    figurePath =    os.path.join(outputDir, '_All_Correlations.png')
+    figurePath =    os.path.join(outputDir, 'All_Correlations.png')
     plt.savefig(figurePath, dpi=600)
     plt.clf()
     
@@ -262,7 +259,7 @@ if makeLineplot:
 #        plt.show()
         
         # save data and line plot
-        figurePath =    os.path.join(outputDir, condname  + '_Correlation.png')
+        figurePath =    os.path.join(condLineFigDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()
 
@@ -271,35 +268,36 @@ if makeLineplot:
             count = len(cond_df[Image].unique())
             print(f'generating violinplots for {currcond} ({count} total): ', end='')
             for i,curr_image in enumerate(cond_df[Image].unique()):
-                print (i+1,end=',')
-                violin_df = cond_df[cond_df[Image] == curr_image]
-    
-                # add missing x values
-                for N in range(max_spots+1):
-                    if not N in violin_df[spotName].unique():
-                        newrow = {Cond:condname, Image:curr_image, spotName:N, yAxisName:np.nan}
-                        violin_df = violin_df.append(newrow, ignore_index=True)
-                
-                
-                
-                # plot & formatting
-                sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
-                sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
-                               scale = "width", color = 'lightskyblue')
-                
-                plt.title(condname + '\n' + curr_image)
-                plt.xlabel(spotName)
-                plt.xlim(x_min, x_max)
-                plt.ylabel(yAxisName)
-                plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
-                plt.grid(axis='y')
-                
-                # save figure and data
-                violin_name = condname + "_" + curr_image
-                figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
-                plt.savefig(figurePath, dpi=600)
-    #            plt.show()
-                plt.clf()
+                if curr_image is not 'fake':
+                    print (i+1,end=',')
+                    violin_df = cond_df[cond_df[Image] == curr_image]
+        
+                    # add missing x values
+                    for N in range(max_spots+1):
+                        if not N in violin_df[spotName].unique():
+                            newrow = {Cond:condname, Image:curr_image, spotName:N, yAxisName:np.nan}
+                            violin_df = violin_df.append(newrow, ignore_index=True)
+                    
+                    
+                    
+                    # plot & formatting
+                    sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
+                    sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
+                                   scale = "width", color = 'lightskyblue')
+                    
+                    plt.title(condname + '\n' + curr_image)
+                    plt.xlabel(spotName)
+                    plt.xlim(x_min, x_max)
+                    plt.ylabel(yAxisName)
+                    plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
+                    plt.grid(axis='y')
+                    
+                    # save figure and data
+                    violin_name = condname + "_" + curr_image
+                    figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
+                    plt.savefig(figurePath, dpi=600)
+        #            plt.show()
+                    plt.clf()
             print('')
     
 #    for im in lineplots:

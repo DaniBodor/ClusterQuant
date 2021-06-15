@@ -4,7 +4,7 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\JW_test_210515\_ClusterQuant'
+dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
 
 
 #%%
@@ -32,6 +32,7 @@ exportStats     = True # output CSVs for further processing
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
+histo_bar_vs_line_cutoff = 4
 
 # names
 Cond = 'Condition'
@@ -41,7 +42,7 @@ Freq_noZeroes = 'Frequency_'
 Count = 'Count'
 
 
-#%% FUNCTIONS
+#%% MINOR FUNCTIONS
 #%%
 def make_histdf(df):
     '''
@@ -141,8 +142,10 @@ def getCI(df, ci=95):
         ci95_hi.append(m + 1.95*s/np.sqrt(c))
     
     return ci95_lo, ci95_hi
-    
-#%% MAIN       
+
+
+#%% MAIN FUNCTIONS
+#%%
 
 #%% READ AND ORDER DATA
 if readData:
@@ -182,9 +185,6 @@ if readData:
     full_df.reset_index(drop=True, inplace=True)
     save_csv(full_df, 'Raw_data')
 
-    nFolders = len(full_df[Cond].unique())
-
-
 #%% MAKE HISTOGRAM
 
 if makeHisto:
@@ -197,7 +197,7 @@ if makeHisto:
     y_data = [Freq,Freq_noZeroes]
     for x in range(2):
         # generate plot
-        if nFolders < 4:
+        if len(full_df[Cond].unique()) < histo_bar_vs_line_cutoff:
             sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
         else:
             sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)

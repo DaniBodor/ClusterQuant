@@ -4,7 +4,7 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\testData2\_ClusterQuant'
+dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
 exclude_zeroes  = True # include or exclude 0s from histogram
 
 
@@ -28,9 +28,9 @@ outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
 readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = True # create histogram of spot data
-makeLineplot    = 0 # create a correlation graph between spots and intensities
-makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
+makeHisto       = 1 # create histogram of spot data
+makeLineplot    = 1 # create a correlation graph between spots and intensities
+makeViolinplots = 1 # make a violinplot for each cell showing intensity by spot count
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -217,7 +217,7 @@ if makeLineplot:
             count = len(cond_df.Cell.unique())
             print(f'generating violinplots for {currcond} ({count} total): ', end='')
             for i,currcell in enumerate(cond_df.Cell.unique()):
-                print (i,end=',')
+                print (i+1,end=',')
                 violin_df = cond_df[cond_df.Cell == currcell]
     
                 # add missing x values

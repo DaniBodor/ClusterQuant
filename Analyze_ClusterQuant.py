@@ -4,8 +4,8 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\Kim_Dataset_2\_ClusterQuant'
-exclude_zeroes  = False # include or exclude 0s from histogram
+dataDir = r'.\data\testData2\_ClusterQuant'
+exclude_zeroes  = True # include or exclude 0s from histogram
 
 
 #%%
@@ -167,7 +167,8 @@ if makeHisto:
     plt.xlabel(spotName)
     plt.ylabel('Frequency')
     plt.grid(axis='y')
-     
+    if exclude_zeroes:
+        plt.xlim(left=0.5)
     # save plot
     figurePath = os.path.join(outputDir, 'Histogram.png')
     plt.savefig(figurePath, dpi=600)

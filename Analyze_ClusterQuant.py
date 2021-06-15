@@ -29,15 +29,15 @@ starttime = datetime.now()
 
 readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = 1 # create histogram of spot data
-makeLineplot    = 1 # create a correlation graph between spots and intensities
-makeViolinplots = 1 # make a violinplot for each cell showing intensity by spot count
+makeLineplot    = 0 # create a correlation graph between spots and intensities
+makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
 
 # names
-Cond_column = 'Condition'
-Cell_column = 'Cell'
+Cond = 'Condition'
+Image = 'Cell'
 Freq = 'Frequency'
 Freq_no0 = 'Frequency_'
 Counts = 'Counts'
@@ -53,12 +53,12 @@ def make_histdf(df):
     '''
 
     # Get counts
-    output_df = (df.groupby([Cond_column])[spotName]
+    output_df = (df.groupby([Cond])[spotName]
                      .value_counts()
                      .rename(Counts)
                      .reset_index() )
     # Get counts and pass to output_df
-    df2 = (df.groupby([Cond_column])[spotName]
+    df2 = (df.groupby([Cond])[spotName]
                      .value_counts(normalize=True)
                      .rename(Freq)
                      .reset_index() )
@@ -72,13 +72,13 @@ def make_histdf(df):
         
         sum_df = output_df.groupby([Cond])[Freq_no0].sum().reset_index()
         for i,f in enumerate(output_df[Freq_no0]):
-            output_df[Freq_no0][i] = f / sum_df[Freq_no0][sum_df[Cond_column] == output_df[Cond_column][i]]
+            output_df[Freq_no0][i] = f / sum_df[Freq_no0][sum_df[Cond] == output_df[Cond][i]]
 
     
     if MaxLength_CondName:
-        df = shorten_column_name(df, Cond_column, MaxLength_CondName)
+        df = shorten_column_name(df, Cond, MaxLength_CondName)
     
-    output_df = output_df.sort_values([Cond_column,spotName])
+    output_df = output_df.sort_values([Cond,spotName])
     output_df.reset_index(drop=True, inplace=True)
     return output_df
 
@@ -125,7 +125,7 @@ if readData:
             yAxisName   = l.split(' ')[2]
             windowSize  = l.split(' ')[3]
             winDisplace = l.split(' ')[4].strip()
-            full_df = pd.DataFrame(columns = [Cond_column, Cell_column, spotName, yAxisName])
+            full_df = pd.DataFrame(columns = [Cond, Image, spotName, yAxisName])
             outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
@@ -139,12 +139,12 @@ if readData:
             
             indata = {spotName: spots,
                       yAxisName: signal,
-                      Cond_column: [Condition]*len(spots),
-                      Cell_column: [Cell]*len(spots)}
+                      Cond: [Condition]*len(spots),
+                      Image: [Cell]*len(spots)}
             
             celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(celldf)                # add cell to dataframe
-    full_df = full_df [[Cond_column, Cell_column, spotName, yAxisName]]    # reorder columns
+    full_df = full_df [[Cond, Image, spotName, yAxisName]]    # reorder columns
     nConditions = len(full_df.Condition.unique())
 
 
@@ -167,13 +167,13 @@ if makeHisto:
 
     # generate plot
     if nConditions < 4:
-        sns.barplot (x=spotName, y=y_data, hue=Cond_column, data=histogram_df)
+        sns.barplot (x=spotName, y=y_data, hue=Cond, data=histogram_df)
     else:
-        sns.lineplot(x=spotName, y=y_data, hue=Cond_column, data=histogram_df)
+        sns.lineplot(x=spotName, y=y_data, hue=Cond, data=histogram_df)
     
     # plot formatting
     plt.legend(prop={'size': 12})
-    plt.title(spotName + ' per square')
+    plt.title(f'{spotName} per {windowSize}x{windowSize} square')
     plt.xlabel(spotName)
     plt.ylabel(Freq)
     plt.grid(axis='y')
@@ -217,6 +217,8 @@ if makeLineplot:
 #        plt.show()
         
         # save data and line plot
+        cond_df = cond_df.sort_values([Cond,Image,spotName])
+        cond_df.reset_index(drop=True, inplace=True)
         cond_df.to_csv( os.path.join(outputDir, condname  + '_Correlation.csv'))
         figurePath =    os.path.join(outputDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
@@ -233,7 +235,7 @@ if makeLineplot:
                 # add missing x values
                 for N in range(max_spots+1):
                     if not N in violin_df[spotName].unique():
-                        newrow = {Cond_column:condname, Cell_column:currcell, spotName:N, yAxisName:np.nan}
+                        newrow = {Cond:condname, Image:currcell, spotName:N, yAxisName:np.nan}
                         violin_df = violin_df.append(newrow, ignore_index=True)
                 
                 

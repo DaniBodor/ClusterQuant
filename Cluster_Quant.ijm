@@ -111,6 +111,7 @@ Dialog.create("Extended settings");
 	//Dialog.setInsets(5,0,0);
 	Dialog.addMessage(" DNA AND SPOT DETECTION");
 	//Dialog.setInsets(0, 20, 0);
+	if (dnaChannel < 0) Dialog.addDirectory("Preload DNA outlines", "");
 	T_options = getList("threshold.methods");
 	Dialog.addChoice("DNA thresholding", T_options, defaults[15]);
 	Dialog.addNumber("Dilate cycles", defaults[16],0,3, "");
@@ -121,11 +122,16 @@ Dialog.create("Extended settings");
 	Dialog.addNumber("Deconvolution border", defaults[17],0,3, "pixels (16 is default for DV; 0 for no cropping)");
 
 
-if ( extended_settings ) Dialog.show();
+if ( extended_settings || dnaChannel < 0) Dialog.show();
+	
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
 	// Detection settings
+	if (dnaChannel < 0){
+		oldROIdir = Dialog.getString();
+	}
+	else oldROIdir = "";
 	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy
 	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles for DAPI outline
 	prominence =	Dialog.getNumber();	// prominence value of find maxima function
@@ -134,6 +140,7 @@ if ( extended_settings ) Dialog.show();
 
 // save defaults
 defaults = export_defaults();
+
 
 
 // Create output directories
@@ -435,7 +442,14 @@ function clusterQuantification(){
 
 // step 1
 function makeMask(){
-	if (dnaChannel > 0) {
+	// load old ROIs of 
+	if (File.isDirectory(oldROIdir)){
+		roiManager("reset");
+		oldROIfile = oldROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
+		roiManager("open", oldROIfile)
+		//print(oldROIfile);
+	}
+	else if (dnaChannel > 0) {
 		// prep images
 		selectImage(ori);
 		setSlice (dnaChannel);

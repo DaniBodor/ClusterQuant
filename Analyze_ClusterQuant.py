@@ -29,7 +29,7 @@ starttime = datetime.now()
 
 readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
 makeHisto       = 1 # create histogram of spot data
-makeLineplot    = 0 # create a correlation graph between spots and intensities
+makeLineplot    = 1 # create a correlation graph between spots and intensities
 makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
@@ -84,7 +84,7 @@ def make_histdf(df):
 
 #%%
 def shorten_column_name(df,column,L):
-    long_cond_names = list(df.Condition.unique())
+    long_cond_names = list(df[Cond].unique())
     short_cond_names = [x[:L-3]+'...' if len(x)>L else x for x in long_cond_names]
     df = df.replace(long_cond_names,short_cond_names)
     
@@ -100,6 +100,8 @@ def name_cleaner(name):
 
     while name[-1] == '_':
         name = name[:-1]
+    while name[0] == ' ':
+        name = name[1:]
     
     return name
 
@@ -108,7 +110,27 @@ def excl_0(df):
     df = df[df[spotName] != 0]
     return df
 
+#%%
+def save_csv(df,name):
+    try:
+        filename = name + '.csv'
+        df.to_csv( os.path.join(outputDir, filename) )
+    except PermissionError:
+        print(f'could not save {filename}')
 
+#%%
+def duplicate_singles(df):
+    cheat_df = df.copy()
+    for i,x in enumerate( histogram_df[Counts] ):
+        if x == 1:
+            cheat_numb = histogram_df[spotName][i]
+            cheat_cond = histogram_df[Cond][i]
+            cheat_value = 0.0001 + cheat_df.query(f'{Cond} == "{cheat_cond}" and {spotName} == {cheat_numb}')[yAxisName]
+            cheatrow = {Cond:cheat_cond, Image:'fake', spotName:cheat_numb, yAxisName:float(cheat_value)}
+            cheat_df = cheat_df.append(cheatrow,ignore_index=True)
+    return cheat_df
+    
+    
 #%% MAIN       
 
 #%% READ AND ORDER DATA
@@ -118,7 +140,7 @@ if readData:
     with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
         lines = [x for x in myfile.readlines() if not x.startswith('#')]
 
-    Condition,Cell = '',''
+    Folder,File = '',''
     for i,l in enumerate(lines):
         if l.startswith('****'):
             spotName    = l.split(' ')[1]
@@ -131,21 +153,25 @@ if readData:
                 os.mkdir(outputDir)
 
         elif l.startswith('***'):
-            Condition = l[3:-1]
+            Folder = l[3:-1]
         elif l.startswith('**'):
-            Cell = name_cleaner(l[2:-1])
+            File = name_cleaner(l[2:-1])
             spots = [int(s)   for s in lines[i+1].split(', ')]
             signal = [float(s)   for s in lines[i+2].split(', ')]
             
             indata = {spotName: spots,
                       yAxisName: signal,
-                      Cond: [Condition]*len(spots),
-                      Image: [Cell]*len(spots)}
+                      Cond:  [Folder]*len(spots),
+                      Image: [File]*len(spots)}
             
-            celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
-            full_df = full_df.append(celldf)                # add cell to dataframe
-    full_df = full_df [[Cond, Image, spotName, yAxisName]]    # reorder columns
-    nConditions = len(full_df.Condition.unique())
+            file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
+            full_df = full_df.append(file_df)                # add cell to dataframe
+    full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
+    full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
+    full_df.reset_index(drop=True, inplace=True)
+    save_csv(full_df, 'All_data')
+
+    nFolders = len(full_df[Cond].unique())
 
 
 #%% MAKE HISTOGRAM
@@ -155,10 +181,7 @@ if makeHisto:
     
     # make and export histogram
     histogram_df = make_histdf(full_df)
-    try:
-        histogram_df.to_csv( os.path.join(outputDir, 'Histogram.csv') )
-    except PermissionError:
-        print('could not save histogram csv')
+    save_csv(histogram_df, 'Histogram')
     
     if exclude_zeroes:
         y_data = Freq_no0
@@ -166,7 +189,7 @@ if makeHisto:
         y_data = Freq
 
     # generate plot
-    if nConditions < 4:
+    if nFolders < 4:
         sns.barplot (x=spotName, y=y_data, hue=Cond, data=histogram_df)
     else:
         sns.lineplot(x=spotName, y=y_data, hue=Cond, data=histogram_df)
@@ -189,53 +212,72 @@ if makeHisto:
 #%% MAKE INDIVIDUAL VIOLINPLOTS
     
 if makeLineplot:
+    print (f'making correlation for all {Cond}')
     
-    # figure output directory
+    # make plot for all conditions in 1 figure
+    corr_df = duplicate_singles(full_df)
+    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond,)
+    x_min, x_max = plt.xlim()
+    y_min, y_max = plt.ylim()
+    
+    # formatting
+    plt.title(f'{spotName} vs {yAxisName}')
+    plt.grid(lw = 0.5)
+    
+    figurePath =    os.path.join(outputDir, '_All_Correlations.png')
+    plt.savefig(figurePath, dpi=600)
+    plt.clf()
+    
+    # figure output directories
     violinFigDir = os.path.abspath(os.path.join(outputDir, 'ViolinFigs'))
     if not os.path.exists(violinFigDir):
         os.mkdir(violinFigDir)
     
+    condLineFigDir = os.path.abspath(os.path.join(outputDir, Cond))
+    if not os.path.exists(condLineFigDir):
+        os.mkdir(condLineFigDir)
+    
     max_spots = full_df[spotName].max() #for formatting
-
-    for currcond in full_df.Condition.unique():
+    for i, currcond in enumerate(full_df[Cond].unique()):
         print (f'making correlation diagram for {currcond}')
-        # generate correlation df per condition
-        cond_df = full_df[full_df.Condition == currcond]
+        
+        # generate and save correlation df per condition
+        cond_df = corr_df[corr_df[Cond] == currcond]
+#        cond_df = cond_df.sort_values([Cond,Image,spotName])
+#        cond_df.reset_index(drop=True, inplace=True)
         condname = currcond
         if MaxLength_CondName and len(condname) > MaxLength_CondName:
             condname = condname[:MaxLength_CondName-3] + '...'
-         
-        # create line of all data per condition
-        sns.lineplot  (x = spotName, y = yAxisName, data = cond_df, color = 'r')
+#        cond_df.to_csv( os.path.join(outputDir, condname  + '_Correlation.csv'))
         
+        # create line of all data per condition
+        sns.lineplot(x = spotName, y = yAxisName, data = cond_df, color = 'r')
+        
+        # format axes
         plt.title(condname)
-        plt.xlabel(spotName)
-        plt.ylabel(yAxisName)
-        plt.xlim(-0.5, max_spots + 0.5 )
+        plt.xlim(x_min, x_max)
         plt.xticks(range(max_spots+1))
-        plt.grid()
+        plt.ylim(y_min, y_max)
+        plt.grid(lw = 0.5)
 #        plt.show()
         
         # save data and line plot
-        cond_df = cond_df.sort_values([Cond,Image,spotName])
-        cond_df.reset_index(drop=True, inplace=True)
-        cond_df.to_csv( os.path.join(outputDir, condname  + '_Correlation.csv'))
         figurePath =    os.path.join(outputDir, condname  + '_Correlation.png')
         plt.savefig(figurePath, dpi=600)
         plt.clf()
 
         if makeViolinplots:
         # create violin of data per cell
-            count = len(cond_df.Cell.unique())
+            count = len(cond_df[Image].unique())
             print(f'generating violinplots for {currcond} ({count} total): ', end='')
-            for i,currcell in enumerate(cond_df.Cell.unique()):
+            for i,curr_image in enumerate(cond_df[Image].unique()):
                 print (i+1,end=',')
-                violin_df = cond_df[cond_df.Cell == currcell]
+                violin_df = cond_df[cond_df[Image] == curr_image]
     
                 # add missing x values
                 for N in range(max_spots+1):
                     if not N in violin_df[spotName].unique():
-                        newrow = {Cond:condname, Image:currcell, spotName:N, yAxisName:np.nan}
+                        newrow = {Cond:condname, Image:curr_image, spotName:N, yAxisName:np.nan}
                         violin_df = violin_df.append(newrow, ignore_index=True)
                 
                 
@@ -245,20 +287,23 @@ if makeLineplot:
                 sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
                                scale = "width", color = 'lightskyblue')
                 
-                plt.title(condname + '\n' + currcell)
+                plt.title(condname + '\n' + curr_image)
                 plt.xlabel(spotName)
+                plt.xlim(x_min, x_max)
                 plt.ylabel(yAxisName)
-                plt.xlim(-0.5, max_spots + 0.5 )
                 plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
                 plt.grid(axis='y')
                 
                 # save figure and data
-                violin_name = condname + "_" + currcell
+                violin_name = condname + "_" + curr_image
                 figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
                 plt.savefig(figurePath, dpi=600)
     #            plt.show()
                 plt.clf()
             print('')
+    
+#    for im in lineplots:
+        
 
 
 print('')

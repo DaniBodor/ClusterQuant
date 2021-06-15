@@ -256,7 +256,7 @@ function import_defaults(){
 	
 	// set pre-defaults for first time
 	defaults = newArray();
-	defaults[0] = "" 				;//dir 				= Dialog.getString();
+	defaults[0] = "_" 				;//dir 				= Dialog.getString();
 	defaults[1] = "ClusterQuant" 	;//expName 			= Dialog.getString();
 	defaults[2] = ".dv" 			;//imageIdentifier	= Dialog.getString();
 	defaults[3] = 4 				;//clusterChannel	= Dialog.getNumber();
@@ -279,10 +279,22 @@ function import_defaults(){
 	
 	if (File.exists(defaults_file)) {
 		def_str = File.openAsString(defaults_file);
-		imp_def = split(def_str, ", ");
+		imp_def = split(def_str, ",");
+		for (i = 0; i < imp_def.length; i++) {
+			while(startsWith(imp_def[i], " "))	imp_def[i] = substring(imp_def[i], 1);
+		}
 		
 		if (imp_def.length == defaults.length){
 			defaults = imp_def;
+		}
+		else {
+			print(imp_def.length,defaults.length);
+			Array.print (imp_def);
+			Array.print (defaults);
+			min = minOf(imp_def.length, defaults.length);
+			for (i = 0; i < min; i++) print(i,imp_def[i],defaults[i]);
+			exit("defaults and imported defaults length doesnt match")
+			
 		}
 	}
 	for (i = 0; i < defaults.length; i++) {
@@ -362,10 +374,6 @@ function test_1(){
 
 function test_2(){
 	run("Tile");
-	for (id = 1; id <= nImages; id++) {
-		selectImage(id);
-		resetMinAndMax;
-	}
 	roiManager("Combine");
 	roiManager("add");
 	for (i = 1; i <= nImages; i++) {
@@ -591,6 +599,7 @@ function measureClustering(){
 
 	// find kinetochores
 	selectImage(ori);
+	resetMinAndMax;
 	setSlice(clusterChannel);
 	run("Find Maxima...", "prominence=" + prominence + " strict exclude output=[Single Points]");
 	run("Divide...", "value=255");
@@ -600,11 +609,7 @@ function measureClustering(){
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
 	spotIM = getTitle();
 	run("Tile");
-	for (id = 1; id <= nImages; id++) {
-		selectImage(id);
-		resetMinAndMax;
-	}
-	
+
 	// get global bg
 	bgSignal = 0;	// for no background correction
 	if (bgMeth == background_methods[1]) {	// global bg correction

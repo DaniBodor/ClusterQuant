@@ -4,8 +4,8 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
-exclude_zeroes  = True # include or exclude 0s from histogram
+dataDir = r'.\data\JW_test_210515\_ClusterQuant'
+exclude_zeroes  = False # include or exclude 0s from histogram
 
 
 #%%
@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
 import seaborn as sns # essential for outputting figures, not CSVs
 
 
-csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][0]
+csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][-1]
 timestamp = csvInputFile[-14:-4]
 expName = os.path.basename(dataDir)
 outputDir = os.path.join(dataDir, 'Results_' + timestamp)
@@ -35,6 +35,14 @@ makeViolinplots = 1 # make a violinplot for each cell showing intensity by spot 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
 
+# names
+Cond_column = 'Condition'
+Cell_column = 'Cell'
+Freq = 'Frequency'
+Freq_no0 = 'Frequency_'
+Counts = 'Counts'
+
+
 #%% FUNCTIONS
 #%%
 def make_histdf(df):
@@ -45,31 +53,33 @@ def make_histdf(df):
     '''
 
     # Get counts
-    output_df = (df.groupby(['Condition'])[spotName]
+    output_df = (df.groupby([Cond_column])[spotName]
                      .value_counts()
-                     .rename('Counts')
+                     .rename(Counts)
                      .reset_index() )
     # Get counts and pass to output_df
-    df2 = (df.groupby(['Condition'])[spotName]
+    df2 = (df.groupby([Cond_column])[spotName]
                      .value_counts(normalize=True)
-                     .rename('Frequency')
+                     .rename(Freq)
                      .reset_index() )
-    output_df['Frequency'] = df2['Frequency']
+    output_df[Freq] = df2[Freq]
     
     # Get 0-free frequencies
     with pd.option_context('mode.chained_assignment',None):
-        output_df['Excl_0'] = output_df['Counts']
+        output_df[Freq_no0] = output_df[Counts]
         zeroes = output_df[spotName] == 0
-        output_df['Excl_0'][zeroes] = np.nan
+        output_df[Freq_no0][zeroes] = np.nan
         
-        sum_df = output_df.groupby(["Condition"])['Excl_0'].sum().reset_index()
-        for i,f in enumerate(output_df['Excl_0']):
-            output_df['Excl_0'][i] = f / sum_df['Excl_0'][sum_df['Condition'] == output_df['Condition'][i]]
+        sum_df = output_df.groupby([Cond])[Freq_no0].sum().reset_index()
+        for i,f in enumerate(output_df[Freq_no0]):
+            output_df[Freq_no0][i] = f / sum_df[Freq_no0][sum_df[Cond_column] == output_df[Cond_column][i]]
 
     
     if MaxLength_CondName:
-        df = shorten_column_name(df, 'Condition', MaxLength_CondName)
+        df = shorten_column_name(df, Cond_column, MaxLength_CondName)
     
+    output_df = output_df.sort_values([Cond_column,spotName])
+    output_df.reset_index(drop=True, inplace=True)
     return output_df
 
 #%%
@@ -115,7 +125,7 @@ if readData:
             yAxisName   = l.split(' ')[2]
             windowSize  = l.split(' ')[3]
             winDisplace = l.split(' ')[4].strip()
-            full_df = pd.DataFrame(columns = ['Condition', 'Cell', spotName, yAxisName])
+            full_df = pd.DataFrame(columns = [Cond_column, Cell_column, spotName, yAxisName])
             outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
@@ -129,12 +139,12 @@ if readData:
             
             indata = {spotName: spots,
                       yAxisName: signal,
-                      'Condition': [Condition]*len(spots),
-                      'Cell': [Cell]*len(spots)}
+                      Cond_column: [Condition]*len(spots),
+                      Cell_column: [Cell]*len(spots)}
             
             celldf = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(celldf)                # add cell to dataframe
-    full_df = full_df [['Condition', 'Cell', spotName, yAxisName]]    # reorder columns
+    full_df = full_df [[Cond_column, Cell_column, spotName, yAxisName]]    # reorder columns
     nConditions = len(full_df.Condition.unique())
 
 
@@ -151,21 +161,21 @@ if makeHisto:
         print('could not save histogram csv')
     
     if exclude_zeroes:
-        y_data = 'Excl_0'
+        y_data = Freq_no0
     else:
-        y_data = 'Frequency'
+        y_data = Freq
 
     # generate plot
     if nConditions < 4:
-        sns.barplot (x=spotName, y=y_data, hue="Condition", data=histogram_df)
+        sns.barplot (x=spotName, y=y_data, hue=Cond_column, data=histogram_df)
     else:
-        sns.lineplot(x=spotName, y=y_data, hue="Condition", data=histogram_df)
+        sns.lineplot(x=spotName, y=y_data, hue=Cond_column, data=histogram_df)
     
     # plot formatting
     plt.legend(prop={'size': 12})
     plt.title(spotName + ' per square')
     plt.xlabel(spotName)
-    plt.ylabel('Frequency')
+    plt.ylabel(Freq)
     plt.grid(axis='y')
     if exclude_zeroes:
         plt.xlim(left=0.5)
@@ -223,7 +233,7 @@ if makeLineplot:
                 # add missing x values
                 for N in range(max_spots+1):
                     if not N in violin_df[spotName].unique():
-                        newrow = {'Condition':condname, 'Cell':currcell, spotName:N, yAxisName:np.nan}
+                        newrow = {Cond_column:condname, Cell_column:currcell, spotName:N, yAxisName:np.nan}
                         violin_df = violin_df.append(newrow, ignore_index=True)
                 
                 

@@ -51,7 +51,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addToSameRow();	Dialog.addString("Name", defaults[4], 12);
 	Dialog.addNumber("Correlation channel",	defaults[5],0,3, "correlate clustering with"); // former: Microtubule channel
 	Dialog.addToSameRow();	Dialog.addString("Name",defaults[6],12);
-	Dialog.addNumber("DNA channel",			defaults[7],0,3, "0 to skip; -1 for manual"); // former: DNA channel
+	Dialog.addNumber("DNA channel",			defaults[7],0,3, "0 to skip; negative value for manual"); // former: DNA channel
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" SLIDING WINDOWS");
@@ -188,12 +188,11 @@ print(nondataprefix, "All done");
 
 saveLog();
 
-if (closeWinsWhenDone){
+if(isOpen("Results")){
 	selectWindow("Results");
 	run("Close");
 
-	selectWindow("ROI Manager");
-	run("Close");
+	roiManager("reset");
 }
 
 
@@ -286,7 +285,11 @@ function import_defaults(){
 			defaults = imp_def;
 		}
 	}
-
+	for (i = 0; i < defaults.length; i++) {
+		if (defaults[i] == "_") {
+			defaults[i] = "";
+		}
+	}
 	return defaults;
 }
 
@@ -311,10 +314,19 @@ function export_defaults(){
 	defaults[16] = dilateCycles;
 	defaults[17] = deconvCrop;
 
+	for (i = 0; i < defaults.length; i++) {
+		if (defaults[i] == "") {
+			defaults[i] = "_";
+		}
+	}
+
+	print("\\Clear");
 	Array.print(defaults);
 	selectWindow("Log");
 	saveAs("Text", defaults_file);
+//	waitForUser("");
 	print("\\Clear");
+
 
 	return defaults;
 }
@@ -446,6 +458,7 @@ function makeMask(){
 	}
 	
 	else if (dnaChannel < 0){ // manual selection of analysis region
+		setSlice(dnaChannel * -1);
 		setTool("polygon");
 		waitForUser("Create analysis region and add to ROI manager (Ctrl+t)");
 

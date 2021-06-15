@@ -9,8 +9,6 @@ dataDir = r'.\data\JW_test_210515\_ClusterQuant'
 
 #%%
 
-
-
 import numpy as np # probably can find a way around this
 import pandas as pd # VERY essential
 import os # possibly can find a way around this
@@ -26,10 +24,11 @@ outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 
 starttime = datetime.now()
 
-readData        = 1 # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = 1 # create histogram of spot data
-makeLineplot    = 1 # create a correlation graph between spots and intensities
-makeViolinplots = 1 # make a violinplot for each cell showing intensity by spot count
+readData        = True # reads data from file; set to False to save time when re-analyzing previous
+makeHisto       = True # create histogram of spot data
+makeLineplot    = True # create a correlation graph between spots and intensities
+makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
+exportStats     = True # output CSVs for further processing
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -38,8 +37,8 @@ MaxLength_CondName = 0
 Cond = 'Condition'
 Image = 'Cell'
 Freq = 'Frequency'
-Freq_no0 = 'Frequency_'
-Counts = 'Counts'
+Freq_noZeroes = 'Frequency_'
+Count = 'Count'
 
 
 #%% FUNCTIONS
@@ -51,12 +50,12 @@ def make_histdf(df):
     MaxLen: int or False; max character length of condition (so legend doesn't overflow graph). set to 0/False to ignore
     '''
 
-    # Get counts
+    # Get Count
     output_df = (df.groupby([Cond])[spotName]
                      .value_counts()
-                     .rename(Counts)
+                     .rename(Count)
                      .reset_index() )
-    # Get counts and pass to output_df
+    # Get Count and pass to output_df
     df2 = (df.groupby([Cond])[spotName]
                      .value_counts(normalize=True)
                      .rename(Freq)
@@ -65,13 +64,13 @@ def make_histdf(df):
     
     # Get 0-free frequencies
     with pd.option_context('mode.chained_assignment',None):
-        output_df[Freq_no0] = output_df[Counts]
+        output_df[Freq_noZeroes] = output_df[Count]
         zeroes = output_df[spotName] == 0
-        output_df[Freq_no0][zeroes] = np.nan
+        output_df[Freq_noZeroes][zeroes] = np.nan
         
-        sum_df = output_df.groupby([Cond])[Freq_no0].sum().reset_index()
-        for i,f in enumerate(output_df[Freq_no0]):
-            output_df[Freq_no0][i] = f / sum_df[Freq_no0][sum_df[Cond] == output_df[Cond][i]]
+        sum_df = output_df.groupby([Cond])[Freq_noZeroes].sum().reset_index()
+        for i,f in enumerate(output_df[Freq_noZeroes]):
+            output_df[Freq_noZeroes][i] = f / sum_df[Freq_noZeroes][sum_df[Cond] == output_df[Cond][i]]
 
     
     if MaxLength_CondName:
@@ -120,7 +119,7 @@ def save_csv(df,name):
 #%%
 def duplicate_singles(df):
     cheat_df = df.copy()
-    for i,x in enumerate( histogram_df[Counts] ):
+    for i,x in enumerate( histogram_df[Count] ):
         if x == 1:
             cheat_numb = histogram_df[spotName][i]
             cheat_cond = histogram_df[Cond][i]
@@ -128,7 +127,20 @@ def duplicate_singles(df):
             cheatrow = {Cond:cheat_cond, Image:'fake', spotName:cheat_numb, yAxisName:float(cheat_value)}
             cheat_df = cheat_df.append(cheatrow,ignore_index=True)
     return cheat_df
+
+#%%
+def getCI(df, ci=95):
+    ci95_lo = []
+    ci95_hi = []
     
+    for i in stats.index:
+        m = df.loc[i]['Mean']
+        c = df.loc[i]['Count']
+        s = df.loc[i]['StDev']
+        ci95_lo.append(m - 1.95*s/np.sqrt(c))
+        ci95_hi.append(m + 1.95*s/np.sqrt(c))
+    
+    return ci95_lo, ci95_hi
     
 #%% MAIN       
 
@@ -168,7 +180,7 @@ if readData:
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
     full_df.reset_index(drop=True, inplace=True)
-    save_csv(full_df, 'All_data')
+    save_csv(full_df, 'Raw_data')
 
     nFolders = len(full_df[Cond].unique())
 
@@ -182,7 +194,7 @@ if makeHisto:
     histogram_df = make_histdf(full_df)
     save_csv(histogram_df, 'Histogram')
     
-    y_data = [Freq,Freq_no0]
+    y_data = [Freq,Freq_noZeroes]
     for x in range(2):
         # generate plot
         if nFolders < 4:
@@ -205,7 +217,7 @@ if makeHisto:
         plt.clf()
 
 
-#%% MAKE INDIVIDUAL VIOLINPLOTS
+#%% MAKE COORELATION GRAPHS
     
 if makeLineplot:
     print (f'making correlation for all {Cond}')
@@ -240,12 +252,9 @@ if makeLineplot:
         
         # generate and save correlation df per condition
         cond_df = corr_df[corr_df[Cond] == currcond]
-#        cond_df = cond_df.sort_values([Cond,Image,spotName])
-#        cond_df.reset_index(drop=True, inplace=True)
         condname = currcond
         if MaxLength_CondName and len(condname) > MaxLength_CondName:
             condname = condname[:MaxLength_CondName-3] + '...'
-#        cond_df.to_csv( os.path.join(outputDir, condname  + '_Correlation.csv'))
         
         # create line of all data per condition
         sns.lineplot(x = spotName, y = yAxisName, data = cond_df, color = 'r')
@@ -300,9 +309,22 @@ if makeLineplot:
                     plt.clf()
             print('')
     
-#    for im in lineplots:
-        
+#%%
+if exportStats:
+    # get lots of stats per condition
+    stats = full_df.groupby([Cond,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
+    stats.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats['CI95_low' ], stats['CI95_high'] = getCI(stats)
+    
+    stats[Freq] = histogram_df[Freq]
+    stats[Freq_noZeroes] = histogram_df[Freq_noZeroes]
+    save_csv(stats, 'Statistics_summary')
 
+    # get stats per image
+    stats = full_df.groupby([Cond,Image,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
+    stats.columns = [Cond,Image,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats['CI95_low' ], stats['CI95_high'] = getCI(stats)
+    save_csv(stats, 'Statistics_per_image')
 
 print('')
 print('all done!')

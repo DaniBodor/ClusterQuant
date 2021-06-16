@@ -122,16 +122,16 @@ Dialog.create("Extended settings");
 	Dialog.addNumber("Deconvolution border", defaults[17],0,3, "pixels (16 is default for DV; 0 for no cropping)");
 
 
-if ( extended_settings || dnaChannel < 0) Dialog.show();
+if ( extended_settings || dnaChannel < 0 ) Dialog.show();
 	
 	// Background correction
 	bgMeth =	 	Dialog.getChoice();	// background method: 0 = no correction; 1 = global background (median of cropped region); 2 = local background
 	bgBand =	 	Dialog.getNumber();	// width of band around grid window to measure background intensity in (only used for local bg)
 	// Detection settings
 	if (dnaChannel < 0){
-		oldROIdir = Dialog.getString();
+		oldMaskRoiDir = Dialog.getString();
 	}
-	else oldROIdir = "";
+	else oldMaskRoiDir = "";
 	threshType = 	Dialog.getChoice();	// potentially use RenyiEntropy
 	dilateCycles = 	Dialog.getNumber();	// number of dilation cycles for DAPI outline
 	prominence =	Dialog.getNumber();	// prominence value of find maxima function
@@ -141,7 +141,11 @@ if ( extended_settings || dnaChannel < 0) Dialog.show();
 // save defaults
 defaults = export_defaults();
 
-
+// get prev ROI directory
+Dialog.create("Choose Directory for preload regions");
+Dialog.addDirectory("Main ROI directory", "");
+if (preloadRegions && excludeRegions)	Dialog.show();
+preload_ROIdir = Dialog.getString();
 
 // Create output directories
 File.makeDirectory(outdir);
@@ -271,16 +275,16 @@ function import_defaults(){
 	defaults[5] = 3 				;//correlChanel 	= Dialog.getNumber();
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
-	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
+	defaults[8] = 32 				;//gridSize 		= Dialog.getNumber();
 	defaults[9] = 4 				;//winDisplacement	= Dialog.getNumber();
-	defaults[10] = 150 				;//prominence 		= Dialog.getNumber();
+	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
-	defaults[12] = 1 				;//preloadRegions	= Dialog.getCheckbox();
+	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
 	defaults[13] = "Local" 			;//bgMeth			= Dialog.getChoice();
 	defaults[14] = 2 				;//bgBand			= Dialog.getNumber();
 	defaults[15] = "RenyiEntropy"	;//threshType		= Dialog.getChoice();
 	defaults[16] = 4 				;//dilateCycles		= Dialog.getNumber();
-	defaults[17] = 16 				;//deconvCrop		= Dialog.getNumber();
+	defaults[17] = 0 				;//deconvCrop		= Dialog.getNumber();
 
 	// import previous defaults if they exist
 	
@@ -291,17 +295,16 @@ function import_defaults(){
 			while(startsWith(imp_def[i], " "))	imp_def[i] = substring(imp_def[i], 1);
 		}
 		
-		if (imp_def.length == defaults.length || imp_def.length == 0){
+		if (imp_def.length == defaults.length){
 			defaults = imp_def;
 		}
-		else {
+		else if (imp_def.length > 0){
 			print(imp_def.length,defaults.length);
 			Array.print (imp_def);
 			Array.print (defaults);
 			min = minOf(imp_def.length, defaults.length);
 			for (i = 0; i < min; i++) print(i,imp_def[i],defaults[i]);
-			exit("defaults and imported defaults length doesnt match")
-			
+			exit("defaults and imported defaults length doesnt match");
 		}
 	}
 	for (i = 0; i < defaults.length; i++) {
@@ -342,7 +345,8 @@ function export_defaults(){
 	print("\\Clear");
 	Array.print(defaults);
 	selectWindow("Log");
-	saveAs("Text", defaults_file);
+
+	if (getInfo("window.contents") != "")	saveAs("Text", defaults_file);
 //	waitForUser("");
 	print("\\Clear");
 
@@ -352,29 +356,30 @@ function export_defaults(){
 
 function test_1(){
 	selectImage(ori);
-	setSlice(3);
-	roiManager("Show All without labels");
-	roiManager("Show None");
-	roiManager("deselect");
-	run("From ROI Manager");
-
-	run("Duplicate...", "title=DNA_channel duplicate channels=4");
+	setSlice(clusterChannel);
+	run("Duplicate...", "title=TEMP_thresh duplicate channels=" + dnaChannel);
+	selectImage(ori);
+	run("Duplicate...", "title=TEMP_DNA duplicate channels=" + dnaChannel);
 	run("Tile");
 	for (id = 1; id <= nImages; id++) {
 		selectImage(id);
 		resetMinAndMax;
+		roiManager("show all without labels");
+		roiManager("Show None");
+		roiManager("deselect");
+		run("Select None");
+		run("From ROI Manager");
 	}
 	selectImage(3);
 	run("Threshold...");
-	setAutoThreshold(threshType);
-	resetMinAndMax();
+	setAutoThreshold(threshType + " dark");
 	
 	waitForUser("Check if selection contains all spots: \n \n" + 
 			"- if consistently too large/small: change dilate cycles (higher cycle number = larger area; currently: " + dilateCycles + ").\n" +
 			"- if completely off, test other threshold method on DNA channel (current default is: " + threshType +").\n" +
 			" \nYou can change these parameters in the extended settings window when starting this macro,\nand they will be stored as default in ImageJ");
 	
-	close("DNA_channel");
+	close("TEMP*");
 	selectImage(ori);
 	run("Remove Overlay");
 }
@@ -383,12 +388,17 @@ function test_2(){
 	run("Tile");
 	roiManager("Combine");
 	roiManager("add");
+	del_array = Array.getSequence(roiManager("count")-1);
+	roiManager("select", del_array);
+	roiManager("delete");
 	for (i = 1; i <= nImages; i++) {
 		selectImage(i);
 		roiManager("Show None");
 		roiManager("select", roiManager("count")-1);
 	}
 	selectImage(ori);
+	run("From ROI Manager");
+	run("Select None");
 	waitForUser("Check whether spot recognition seems OK (spots outside the ROI can be ignored).\n" +
 			" \nIf this looks wrong, test to find a good 'Prominence' factor using\n" + 
 			"'Process > Find Maxima...' and use 'Preview point selection' to find a good value.\n" +
@@ -443,11 +453,14 @@ function clusterQuantification(){
 // step 1
 function makeMask(){
 	// load old ROIs of 
-	if (File.isDirectory(oldROIdir)){
+	if (File.isDirectory(oldMaskRoiDir)){
 		roiManager("reset");
-		oldROIfile = oldROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
+		oldROIfile = oldMaskRoiDir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
 		roiManager("open", oldROIfile)
-		//print(oldROIfile);
+		while (roiManager("count") > 1) {
+			roiManager("select", 1);
+			roiManager("delete");
+		}
 	}
 	else if (dnaChannel > 0) {
 		// prep images
@@ -546,11 +559,13 @@ function makeMask(){
 
 // step 2
 function setExcludeRegions(){
-
+	
 	// load existing ROI files if they exist
-	if (preloadRegions && File.exists(ROIfile) ){
+	oldROI_file = preload_ROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
+	print(oldROI_file);
+	if (preloadRegions && File.exists(oldROI_file) ){
 		roiManager("reset");
-		roiManager("open", ROIfile);
+		roiManager("open", oldROI_file);
 	}
 	else {
 		// select correct visuals
@@ -563,8 +578,15 @@ function setExcludeRegions(){
 		setTool("polygon");
 
 		// manually select exclusio regions
+		roiManager("select", 0);
+		run("Make Inverse");
+		roiManager("update");
+		run("Select None");
 		waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
-
+		roiManager("select", 0);
+		run("Make Inverse");
+		roiManager("update");
+		
 		// rename ROIs and save
 		for (roi = 1; roi < roiManager("count"); roi++) {
 			roiManager("select", roi);

@@ -4,6 +4,7 @@ Version 1.0
 
 Measure degree of clustering of individual centromere spots relative to local tubulin intensity from microscopy data.
 
+# UNDER CONSTRUCTION / IGNORE BELOW
 
 ## Input/Output
 

@@ -134,7 +134,7 @@ def getCI(df, ci=95):
     ci95_lo = []
     ci95_hi = []
     
-    for i in stats.index:
+    for i in df.index:
         m = df.loc[i]['Mean']
         c = df.loc[i]['Count']
         s = df.loc[i]['StDev']
@@ -144,7 +144,7 @@ def getCI(df, ci=95):
     return ci95_lo, ci95_hi
 
 
-#%% MAIN FUNCTIONS
+#%% MAIN
 #%%
 
 #%% READ AND ORDER DATA
@@ -152,7 +152,7 @@ if readData:
     print ('reading input data')
     
     with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
-        lines = [x for x in myfile.readlines() if not x.startswith('#')]
+        lines = [x.strip(',\n') for x in myfile.readlines() if not x.startswith('#')]
 
     Folder,File = '',''
     for i,l in enumerate(lines):
@@ -161,17 +161,17 @@ if readData:
             yAxisName   = l.split(' ')[2]
             windowSize  = l.split(' ')[3]
             winDisplace = l.split(' ')[4].strip()
-            full_df = pd.DataFrame(columns = [Cond, Image, spotName, yAxisName])
+            full_df = pd.DataFrame()
             outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
 
         elif l.startswith('***'):
-            Folder = l[3:-1]
+            Folder = l[3:]
         elif l.startswith('**'):
-            File = name_cleaner(l[2:-1])
-            spots = [int(s)   for s in lines[i+1].split(', ')]
-            signal = [float(s)   for s in lines[i+2].split(', ')]
+            File = name_cleaner(l[2:])
+            spots =  [int   ( s.strip() ) for s in lines[i+1].split(',')]
+            signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
             
             indata = {spotName: spots,
                       yAxisName: signal,
@@ -274,8 +274,8 @@ if makeLineplot:
 
         if makeViolinplots:
         # create violin of data per cell
-            count = len(cond_df[Image].unique())
-            print(f'generating violinplots for {currcond} ({count} total): ', end='')
+            total = len(full_df[full_df[Cond] == currcond][Image].unique())
+            print(f'generating violinplots for {currcond} ({total} total): ', end='')
             for i,curr_image in enumerate(cond_df[Image].unique()):
                 if curr_image is not 'fake':
                     print (i+1,end=',')
@@ -292,14 +292,14 @@ if makeLineplot:
                     # plot & formatting
                     sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
                     sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
-                                   scale = "width", color = 'lightskyblue')
+                                   scale = "width", color = 'lightskyblue', lw = 1)
                     
                     plt.title(condname + '\n' + curr_image)
-                    plt.xlabel(spotName)
+#                    plt.xlabel(spotName)
                     plt.xlim(x_min, x_max)
-                    plt.ylabel(yAxisName)
+#                    plt.ylabel(yAxisName)
                     plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
-                    plt.grid(axis='y')
+                    plt.grid(axis='y', lw = 0.5)
                     
                     # save figure and data
                     violin_name = condname + "_" + curr_image
@@ -311,20 +311,26 @@ if makeLineplot:
     
 #%%
 if exportStats:
-    # get lots of stats per condition
-    stats = full_df.groupby([Cond,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
-    stats.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats['CI95_low' ], stats['CI95_high'] = getCI(stats)
+    # get lots of stats per condition & count
+    stats_2 = full_df.groupby([Cond,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
+    stats_2.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats_2['CI95_low' ], stats_2['CI95_high'] = getCI(stats_2)
     
-    stats[Freq] = histogram_df[Freq]
-    stats[Freq_noZeroes] = histogram_df[Freq_noZeroes]
-    save_csv(stats, 'Statistics_summary')
+    stats_2[Freq] = histogram_df[Freq]
+    stats_2[Freq_noZeroes] = histogram_df[Freq_noZeroes]
+    save_csv(stats_2, f'{yAxisName}_stats_summary')
 
-    # get stats per image
-    stats = full_df.groupby([Cond,Image,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
-    stats.columns = [Cond,Image,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats['CI95_low' ], stats['CI95_high'] = getCI(stats)
-    save_csv(stats, 'Statistics_per_image')
+    # get stats per condition & count & image
+    stats_3 = full_df.groupby([Cond,Image,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
+    stats_3.columns = [Cond,Image,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats_3['CI95_low' ], stats_3['CI95_high'] = getCI(stats_3)
+    save_csv(stats_3, f'{yAxisName}_stats__per_image')
+    
+    # get stats per condition
+    stats_1 = full_df.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
+    stats_1.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats_1['CI95_low' ], stats_1['CI95_high'] = getCI(stats_1)
+    
 
 print('')
 print('all done!')

@@ -291,7 +291,7 @@ function import_defaults(){
 			while(startsWith(imp_def[i], " "))	imp_def[i] = substring(imp_def[i], 1);
 		}
 		
-		if (imp_def.length == defaults.length){
+		if (imp_def.length == defaults.length || imp_def.length == 0){
 			defaults = imp_def;
 		}
 		else {
@@ -639,8 +639,26 @@ function measureClustering(){
 
 	selectImage(spotIM);
 	for (roi = 0; roi < roiManager("count"); roi++) {
+		// troubleshooting below, because for some reason sometimes it makes the measurement in the wrong image
+		_i = 0;
+		check = 15;
+		while ( getTitle() == ori ){
+			selectImage(spotIM);
+			_i ++;
+			if (_i % check == 0)	waitForUser("##### ERROR 1:" + 15 + "cycles have passed and still wrong image selected");
+		}
+		// troubleshooting over
+		
 		roiManager("select",roi);
+		
+		// 2nd troubleshooting
+		if (getTitle() == ori)		waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
+		// troubleshooting over
+		
 		Spots[roi] = getValue("IntDen");
+		
+		// 3rd troubleshooting
+		if (Spots[roi] > 100)		waitForUser("##### ERROR 3: still wrong valiue outputted somehow");
 	}
 
 	// Measure correlation (separate loop from above saves a lot of time!)

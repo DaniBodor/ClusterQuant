@@ -244,7 +244,7 @@ function getLocalBackground(){
 	getSelectionBounds(x, y, w, h);
 	makeRectangle(x-bgBand, y-bgBand, w+2*bgBand, h+2*bgBand);	// box for measuring bg
 	getStatistics(largeArea, largeMean);
-	largeDens = largeArea*largeMean;
+	largeDens = largeArea * largeMean;
 
 	// calculate bg signal and final signal
 	rawDens = rawArea * rawMean;

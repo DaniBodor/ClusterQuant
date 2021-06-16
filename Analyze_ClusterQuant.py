@@ -4,7 +4,7 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
+dataDir = r'.\data\testData\_ClusterQuant'
 
 
 #%%
@@ -180,6 +180,7 @@ if readData:
             
             file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(file_df)                # add cell to dataframe
+        
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
     full_df.reset_index(drop=True, inplace=True)
@@ -295,10 +296,8 @@ if makeLineplot:
                                    scale = "width", color = 'lightskyblue', lw = 1)
                     
                     plt.title(condname + '\n' + curr_image)
-#                    plt.xlabel(spotName)
                     plt.xlim(x_min, x_max)
-#                    plt.ylabel(yAxisName)
-                    plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max())
+                    plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max() )
                     plt.grid(axis='y', lw = 0.5)
                     
                     # save figure and data
@@ -311,7 +310,22 @@ if makeLineplot:
     
 #%%
 if exportStats:
-    # get lots of stats per condition & count
+    # get clustering stats per condition
+    stats_1 = full_df.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
+    stats_1.columns = [Cond,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats_1['CI95_low' ], stats_1['CI95_high'] = getCI(stats_1)
+    
+
+    full_noZero = full_df[full_df[spotName] != 0]
+    stats_1b = full_noZero.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
+    stats_1b.columns = [Cond,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats_1b['CI95_low' ], stats_1b['CI95_high'] = getCI(stats_1b)
+    stats_1b[Cond] = stats_1[Cond].astype(str) + '_exc0'
+    stats_1 = stats_1.append(stats_1b)
+    save_csv(stats_1, f'{spotName}_stats')
+
+
+    # get signal stats per condition / count
     stats_2 = full_df.groupby([Cond,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
     stats_2.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
     stats_2['CI95_low' ], stats_2['CI95_high'] = getCI(stats_2)
@@ -320,16 +334,11 @@ if exportStats:
     stats_2[Freq_noZeroes] = histogram_df[Freq_noZeroes]
     save_csv(stats_2, f'{yAxisName}_stats_summary')
 
-    # get stats per condition & count & image
+    # get signal stats per imagge / count
     stats_3 = full_df.groupby([Cond,Image,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
     stats_3.columns = [Cond,Image,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
     stats_3['CI95_low' ], stats_3['CI95_high'] = getCI(stats_3)
-    save_csv(stats_3, f'{yAxisName}_stats__per_image')
-    
-    # get stats per condition
-    stats_1 = full_df.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
-    stats_1.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats_1['CI95_low' ], stats_1['CI95_high'] = getCI(stats_1)
+    save_csv(stats_3, f'{yAxisName}_stats_per_image')
     
 
 print('')

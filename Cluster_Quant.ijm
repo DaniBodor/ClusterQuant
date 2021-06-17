@@ -242,7 +242,7 @@ function cropEdges(x){
 	}
 }
 
-function getLocalBackground(){
+function doLocalBgCorrection(){
 
 	// measure (signal + background) MT intensity
 	getSelectionBounds(x, y, w, h);
@@ -255,7 +255,9 @@ function getLocalBackground(){
 	bgArea	= largeArea - rawArea;
 	bgSignal= (largeDens - rawDens) / bgArea;
 
-	return bgSignal;
+	corrected_signal = rawMean - bgSignal
+
+	return corrected_signal;
 }
 
 function saveLog(){
@@ -643,10 +645,12 @@ function measureClustering(){
 	run("Tile");
 
 	// get global bg
-	bgSignal = 0;	// for no background correction
+	globalBG = 1;	// for no background correction
 	if (bgMeth == background_methods[1]) {	// global bg correction
+		selectImage(ori);
 		setSlice(correlChanel);
-		bgSignal = getValue("Median");
+		roiManager("combine");
+		globalBG = getValue("Median");
 	}
 
 	// count number of CEN spots
@@ -688,8 +692,8 @@ function measureClustering(){
 		// measure correl channel
 		roiManager("select",roi);
 		getStatistics(rawArea, rawMean);
-		if (bgMeth == background_methods[2])	bgSignal = getLocalBackground();	// local bg correction
-		Intensities[roi] = rawMean - bgSignal; // background corrected intensity
+		if (bgMeth == background_methods[2])	Intensities[roi] = doLocalBgCorrection();	// local bg correction
+		else									Intensities[roi] = rawMean / globalBG; 		// global BG
 	}
 
 	run("Select None");

@@ -181,7 +181,8 @@ if readData:
             file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(file_df)                # add cell to dataframe
         
-    
+    full_df = full_df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+    full_df[spotName] = full_df[spotName].astype(int)
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
     full_df.reset_index(drop=True, inplace=True)
@@ -231,7 +232,7 @@ if makeLineplot:
     y_min, y_max = plt.ylim()
     
     # formatting
-    plt.title(f'{spotName} vs {yAxisName}')
+    plt.title(f'{yAxisName} vs {spotName}')
     plt.legend(loc = 2, prop={'size': 12})
     plt.grid(lw = 0.5)
     
@@ -248,7 +249,7 @@ if makeLineplot:
     if not os.path.exists(condLineFigDir):
         os.mkdir(condLineFigDir)
     
-    max_spots = int(full_df[spotName].max()) #for formatting
+    max_spots = full_df[spotName].max() #for formatting
     for i, currcond in enumerate(full_df[Cond].unique()):
         print (f'making correlation diagram for {currcond}')
         

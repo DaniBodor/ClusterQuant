@@ -674,13 +674,15 @@ function measureClustering(){
 		roiManager("select",roi);
 		
 		// 2nd troubleshooting
-		if (getTitle() == ori)		waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
+		if (getTitle() == ori){
+			//waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
+			Spots[roi] = "nan"
+		}
 		// troubleshooting over
+		else {
+			Spots[roi] = getValue("IntDen");
+		}
 		
-		Spots[roi] = getValue("IntDen");
-		
-		// 3rd troubleshooting
-		if (Spots[roi] > 100)		waitForUser("##### ERROR 3: still wrong valiue outputted somehow");
 	}
 
 	// Measure correlation (separate loop from above saves a lot of time!)

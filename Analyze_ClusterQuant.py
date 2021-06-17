@@ -4,7 +4,8 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\testData\_ClusterQuant'
+dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
+PythonInput_version = -1
 
 
 #%%
@@ -17,11 +18,10 @@ import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
 import seaborn as sns # essential for outputting figures, not CSVs
 
 
-csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][-1]
+csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
 timestamp = csvInputFile[-14:-4]
 expName = os.path.basename(dataDir)
 outputDir = os.path.join(dataDir, 'Results_' + timestamp)
-
 starttime = datetime.now()
 
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
@@ -170,7 +170,7 @@ if readData:
             Folder = l[3:]
         elif l.startswith('**'):
             File = name_cleaner(l[2:])
-            spots =  [int   ( s.strip() ) for s in lines[i+1].split(',')]
+            spots =  [float   ( s.strip() ) for s in lines[i+1].split(',')]
             signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
             
             indata = {spotName: spots,
@@ -181,6 +181,7 @@ if readData:
             file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
             full_df = full_df.append(file_df)                # add cell to dataframe
         
+    
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
     full_df.reset_index(drop=True, inplace=True)
@@ -205,7 +206,7 @@ if makeHisto:
         
         # plot formatting
         plt.legend(loc = 1, prop={'size': 12})
-        plt.title(f'{spotName} per {windowSize}x{windowSize} square')
+        plt.title(f'{spotName} per {windowSize}x{windowSize} square (displ: {winDisplace})')
 #        plt.xlabel(spotName)
         plt.ylabel(Freq)
         plt.grid(axis='y', lw = 0.5)
@@ -231,7 +232,7 @@ if makeLineplot:
     
     # formatting
     plt.title(f'{spotName} vs {yAxisName}')
-    plt.legend(loc = 1, prop={'size': 12})
+    plt.legend(loc = 2, prop={'size': 12})
     plt.grid(lw = 0.5)
     
     figurePath =    os.path.join(outputDir, 'All_Correlations.png')
@@ -247,7 +248,7 @@ if makeLineplot:
     if not os.path.exists(condLineFigDir):
         os.mkdir(condLineFigDir)
     
-    max_spots = full_df[spotName].max() #for formatting
+    max_spots = int(full_df[spotName].max()) #for formatting
     for i, currcond in enumerate(full_df[Cond].unique()):
         print (f'making correlation diagram for {currcond}')
         
@@ -310,6 +311,8 @@ if makeLineplot:
     
 #%%
 if exportStats:
+    print ('exporting stats as csv files')
+    
     # get clustering stats per condition
     stats_1 = full_df.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
     stats_1.columns = [Cond,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']

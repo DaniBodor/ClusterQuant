@@ -386,19 +386,15 @@ function test_1(){
 
 function test_2(){
 	run("Tile");
-	roiManager("Combine");
-	roiManager("add");
-	del_array = Array.getSequence(roiManager("count")-1);
-	roiManager("select", del_array);
-	roiManager("delete");
 	for (i = 1; i <= nImages; i++) {
 		selectImage(i);
+		roiManager("Combine");
+		run("Add Selection...");
+		run("Select None");
+		roiManager("Show All without labels");
 		roiManager("Show None");
-		roiManager("select", roiManager("count")-1);
 	}
 	selectImage(ori);
-	run("From ROI Manager");
-	run("Select None");
 	waitForUser("Check whether spot recognition seems OK (spots outside the ROI can be ignored).\n" +
 			" \nIf this looks wrong, test to find a good 'Prominence' factor using\n" + 
 			"'Process > Find Maxima...' and use 'Preview point selection' to find a good value.\n" +

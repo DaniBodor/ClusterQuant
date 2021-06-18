@@ -25,6 +25,7 @@ while (isOpen("Exception")) {
 //run("Text Window...", "name=" + debugWindow + " width=80 height=24 menu");		setLocation(3200, 140);		debugWindow = "[" + debugWindow + "]";
 
 
+
 // load defaults
 defaults_dir = getDirectory("imagej") + "defaults" + File.separator;
 defaults_file = defaults_dir + "Cluster_Quant.txt";

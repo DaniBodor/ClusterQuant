@@ -277,12 +277,12 @@ function import_defaults(){
 	defaults[5] = 3 				;//correlChanel 	= Dialog.getNumber();
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
-	defaults[8] = 32 				;//gridSize 		= Dialog.getNumber();
-	defaults[9] = 4 				;//winDisplacement	= Dialog.getNumber();
+	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
+	defaults[9] = 2 				;//winDisplacement	= Dialog.getNumber();
 	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
 	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
-	defaults[13] = "Local" 			;//bgMeth			= Dialog.getChoice();
+	defaults[13] = "Global"			;//bgMeth			= Dialog.getChoice();
 	defaults[14] = 2 				;//bgBand			= Dialog.getNumber();
 	defaults[15] = "RenyiEntropy"	;//threshType		= Dialog.getChoice();
 	defaults[16] = 4 				;//dilateCycles		= Dialog.getNumber();

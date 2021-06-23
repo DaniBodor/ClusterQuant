@@ -4,7 +4,9 @@ Version 1.0
 
 Measure degree of clustering of individual spots relative to local signal intensity of another channel.
 
-# UNDER CONSTRUCTION / IGNORE BELOW
+# READMEUNDER CONSTRUCTION
+ 
+#IGNORE BELOW
 
 ## Input/Output
 

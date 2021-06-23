@@ -5,8 +5,10 @@ Version 1.0
 Measure degree of clustering of individual spots relative to local signal intensity of another channel.
 
 # README UNDER CONSTRUCTION
- 
-#IGNORE BELOW
+...  
+...
+
+# IGNORE BELOW
 
 ## Input/Output
 

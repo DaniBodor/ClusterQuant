@@ -650,11 +650,15 @@ function measureClustering(){
 		selectImage(ori);
 		setSlice(correlChanel);
 		roiManager("combine");
-		selectImage(ori);
-		globalBG = getValue("Median");
-		if (isNaN(globalBG) || globalBG == 0) {
-			waitForUser(globalBG);
+		_ = 0;
+		while (getTitle() != ori) {
+			selectImage(ori);
+			_++;
+			if ( _ > 15) {
+				exit("crashed on BG measurement of image: " + ori);
+			}
 		}
+		globalBG = getValue("Median");
 	}
 
 	// count number of CEN spots

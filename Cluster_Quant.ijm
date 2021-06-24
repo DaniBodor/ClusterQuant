@@ -650,7 +650,11 @@ function measureClustering(){
 		selectImage(ori);
 		setSlice(correlChanel);
 		roiManager("combine");
+		selectImage(ori);
 		globalBG = getValue("Median");
+		if (isNaN(globalBG) || globalBG == 0) {
+			waitForUser(globalBG);
+		}
 	}
 
 	// count number of CEN spots
@@ -676,7 +680,7 @@ function measureClustering(){
 		// 2nd troubleshooting
 		if (getTitle() == ori){
 			//waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
-			Spots[roi] = "nan"
+			Spots[roi] = "nan";
 		}
 		// troubleshooting over
 		else {

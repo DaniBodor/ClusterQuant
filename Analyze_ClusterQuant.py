@@ -259,12 +259,11 @@ if makeLineplot:
     
     # make plot for all conditions in 1 figure
     corr_df = duplicate_singles(full_df)
-    print('test1')
-    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond,)
-    x_min, x_max = plt.xlim()
-    y_min, y_max = plt.ylim()
-    
-    print('test2')
+    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond) # this line produces: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated
+
+    x_limits = plt.xlim()
+    y_limits = plt.ylim()
+
 
     # formatting
     plt.title(f'{yAxisName} vs {spotName}')
@@ -275,7 +274,6 @@ if makeLineplot:
     plt.savefig(figurePath, dpi=600)
     plt.clf()
     
-    print('test3')
     # figure output directories
     violinFigDir = os.path.abspath(os.path.join(outputDir, 'ViolinFigs'))
     if not os.path.exists(violinFigDir):
@@ -300,9 +298,9 @@ if makeLineplot:
         
         # format axes
         plt.title(condname)
-        plt.xlim(x_min, x_max)
+        plt.xlim(x_limits)
         plt.xticks(range(max_spots+1))
-        plt.ylim(y_min, y_max)
+        plt.ylim(y_limits)
         plt.grid(lw = 0.5)
 #        plt.show()
         
@@ -334,7 +332,7 @@ if makeLineplot:
                                    scale = "width", color = 'lightskyblue', lw = 1)
                     
                     plt.title(condname + '\n' + curr_image)
-                    plt.xlim(x_min, x_max)
+                    plt.xlim(x_limits)
                     plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max() )
                     plt.grid(axis='y', lw = 0.5)
                     

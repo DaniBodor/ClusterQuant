@@ -259,7 +259,7 @@ if makeLineplot:
     
     # make plot for all conditions in 1 figure
     corr_df = duplicate_singles(full_df)
-    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond) # this line produces: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated
+    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond) 
 
     x_limits = plt.xlim()
     y_limits = plt.ylim()
@@ -367,4 +367,6 @@ if exportStats:
     
 
 print('')
+print('(if you got a FutureWarning, try updating pandas)')
 print('all done!')
+

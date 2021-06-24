@@ -8,19 +8,32 @@ dataDir = r'.\data\testData\_LabMeeting'
 PythonInput_version = -1
 
 
+
 #%%
 
-import numpy as np # probably can find a way around this
-import pandas as pd # VERY essential
-import os # possibly can find a way around this
-from datetime import datetime # non-essential
-import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
-import seaborn as sns # essential for outputting figures, not CSVs
+import numpy as np
+import pandas as pd
+import os
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tkinter as tk
+from tkinter import filedialog as fd
 
 
-csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
-timestamp = csvInputFile[-14:-4]
+# open file dialog
+print('find file open window! It might be behind other windows')
+top = tk.Tk()
+top.withdraw()
+
+csvInputPath = os.path.abspath( fd.askopenfilename() )
+csvInputFile = os.path.basename(csvInputPath)
+dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
 expName = os.path.basename(dataDir)
+
+
+#csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
+timestamp = csvInputFile[-14:-4]
 outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
@@ -200,7 +213,12 @@ if makeHisto:
     save_csv(histogram_df, 'Histogram')
     
     y_data = [Freq,Freq_noZeroes]
+<<<<<<< HEAD
     
+=======
+    plt.figure(figsize = (4.8, 6.4))
+
+>>>>>>> replace_open_file_dialog
     for x in range(2):
         too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
         too_many_bars       = max_histo_bars            >   len(full_df[Cond].unique()) * full_df[spotName].max()

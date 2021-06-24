@@ -214,12 +214,7 @@ if makeHisto:
     save_csv(histogram_df, 'Histogram')
     
     y_data = [Freq,Freq_noZeroes]
-<<<<<<< HEAD
     
-=======
-    plt.figure(figsize = (4.8, 6.4))
-
->>>>>>> replace_open_file_dialog
     for x in range(2):
         too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
         too_many_bars       = max_histo_bars            >   len(full_df[Cond].unique()) * full_df[spotName].max()

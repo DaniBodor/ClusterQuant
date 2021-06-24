@@ -20,7 +20,7 @@ from tkinter import filedialog as fd
 
 
 # open file dialog
-print('find file open window! It might be behind other windows')
+print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
 top = tk.Tk()
 top.withdraw()
 

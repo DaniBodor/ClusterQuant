@@ -4,7 +4,7 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\Mitotic_Stages\_ClusterQuant'
+dataDir = r'.\data\testData\_LabMeeting'
 PythonInput_version = -1
 
 
@@ -33,6 +33,8 @@ exportStats     = True # output CSVs for further processing
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
 histo_bar_vs_line_cutoff = 4
+max_histo_bars = 50
+
 
 # names
 Cond = 'Condition'
@@ -198,12 +200,15 @@ if makeHisto:
     save_csv(histogram_df, 'Histogram')
     
     y_data = [Freq,Freq_noZeroes]
+    
     for x in range(2):
+        too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
+        too_many_bars       = max_histo_bars            >   len(full_df[Cond].unique()) * full_df[spotName].max()
         # generate plot
-        if len(full_df[Cond].unique()) < histo_bar_vs_line_cutoff:
-            sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
-        else:
+        if too_many_conditions or too_many_bars:
             sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
+        else:
+            sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
         
         # plot formatting
         plt.legend(loc = 1, prop={'size': 12})

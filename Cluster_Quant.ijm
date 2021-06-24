@@ -651,6 +651,14 @@ function measureClustering(){
 		selectImage(ori);
 		setSlice(correlChanel);
 		roiManager("combine");
+		_ = 0;
+		while (getTitle() != ori) {
+			selectImage(ori);
+			_++;
+			if ( _ > 15) {
+				exit("crashed on BG measurement of image: " + ori);
+			}
+		}
 		globalBG = getValue("Median");
 	}
 
@@ -677,7 +685,7 @@ function measureClustering(){
 		// 2nd troubleshooting
 		if (getTitle() == ori){
 			//waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
-			Spots[roi] = "nan"
+			Spots[roi] = "nan";
 		}
 		// troubleshooting over
 		else {

@@ -4,10 +4,6 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\testData\_LabMeeting'
-PythonInput_version = -1
-
-
 
 #%%
 
@@ -21,6 +17,8 @@ import tkinter as tk
 from tkinter import filedialog as fd
 
 
+
+
 # open file dialog
 print('find file open window! It might be behind other windows')
 top = tk.Tk()
@@ -29,10 +27,13 @@ top.withdraw()
 csvInputPath = os.path.abspath( fd.askopenfilename() )
 csvInputFile = os.path.basename(csvInputPath)
 dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
-expName = os.path.basename(dataDir)
 
-
+#dataDir = r'.\data\testData\_LabMeeting'
+#PythonInput_version = -1
 #csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
+
+
+expName = os.path.basename(dataDir)
 timestamp = csvInputFile[-14:-4]
 outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()

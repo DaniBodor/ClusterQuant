@@ -176,7 +176,7 @@ for (d = 0; d < subdirs.length; d++) {
 			if ( indexOf(filename.toLowerCase, imageIdentifier) >= 0 ){	// check for identifier
 
 				// open image and run macro
-				open(filename);
+				run("Bio-Formats Importer", "open=[" + filename + "] autoscale color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT");
 				rename(filelist[f]);
 				if (printIMname == 1)	print(nondataprefix, getTitle());
 				cropEdges(deconvCrop);

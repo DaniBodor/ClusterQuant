@@ -1,4 +1,4 @@
-# Cluster quantificatier
+# ClusterQuant
 
 Version 1.0
 

@@ -22,9 +22,10 @@ from tkinter import filedialog as fd
 # open file dialog
 print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
 top = tk.Tk()
-top.withdraw()
 
-csvInputPath = os.path.abspath( fd.askopenfilename() )
+csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
+                                                   filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
+top.withdraw()
 csvInputFile = os.path.basename(csvInputPath)
 dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
 

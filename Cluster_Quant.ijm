@@ -429,7 +429,7 @@ function clusterQuantification(){
 		if (excludeRegions) 	setExcludeRegions();
 		else roiManager("save", ROIfile);
 		// step 3: make grid
-		makeGrid();
+		//makeGrid();
 		// step 4: make measurements
 		before = getTime();
 		allData = measureClustering();
@@ -629,6 +629,7 @@ function makeGrid() {
 }
 
 
+
 // step 4
 function measureClustering(){
 
@@ -640,6 +641,9 @@ function measureClustering(){
 	run("Divide...", "value=255");
 	setMinAndMax(0, 1);
 	roiManager("Show All without labels");
+	spots_im = getTitle();
+
+	alt_grid();
 
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
 	spotIM = getTitle();
@@ -709,4 +713,21 @@ function measureClustering(){
 
 	data = Array.concat(Spots,Intensities);
 	return data;
+}
+
+
+function alt_grid(){
+	box = gridSize;
+	roiManager("select", 0);
+	setThreshold(1, 255);
+	run("Analyze Particles...", "display clear add");
+	roiManager("Show None");
+	resetMinAndMax;
+	
+	for (i = 0; i < roiManager("count"); i++) {
+		roiManager("select", i);
+		getSelectionBounds(x, y, width, height);
+		makeRectangle(x-box/2, y-box/2, box+1, box+1);
+		roiManager("update");
+	}
 }

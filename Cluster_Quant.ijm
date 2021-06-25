@@ -702,7 +702,7 @@ function measureClustering(){
 		roiManager("select",roi);
 		getStatistics(rawArea, rawMean);
 		if (bgMeth == background_methods[2])	Intensities[roi] = doLocalBgCorrection();	// local bg correction
-		else									Intensities[roi] = rawMean / globalBG; 		// global BG
+		else									Intensities[roi] = rawMean - globalBG; 		// global BG
 	}
 
 	run("Select None");

@@ -1,14 +1,14 @@
-# Cluster quantificatier
+# ClusterQuant
 
 Version 1.0
 
 Measure degree of clustering of individual spots relative to local signal intensity of another channel.
 
-# README UNDER CONSTRUCTION
+## README under construction
 ...  
 ...
 
-# IGNORE BELOW
+## IGNORE BELOW
 
 ## Input/Output
 

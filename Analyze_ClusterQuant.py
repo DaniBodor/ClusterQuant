@@ -4,23 +4,38 @@ Created on Mon Mar  9 14:13:59 2020
 @author: dani
 """
 
-dataDir = r'.\data\testData\_LabMeeting'
-PythonInput_version = -1
-
 
 #%%
 
-import numpy as np # probably can find a way around this
-import pandas as pd # VERY essential
-import os # possibly can find a way around this
-from datetime import datetime # non-essential
-import matplotlib.pyplot as plt # essential for outputting figures, not CSVs
-import seaborn as sns # essential for outputting figures, not CSVs
+import numpy as np
+import pandas as pd
+import os
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tkinter as tk
+from tkinter import filedialog as fd
 
 
-csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
-timestamp = csvInputFile[-14:-4]
+
+
+# open file dialog
+print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
+top = tk.Tk()
+
+csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
+                                                   filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
+top.withdraw()
+csvInputFile = os.path.basename(csvInputPath)
+dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
+
+#dataDir = r'.\data\testData\_LabMeeting'
+#PythonInput_version = -1
+#csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
+
+
 expName = os.path.basename(dataDir)
+timestamp = csvInputFile[-14:-4]
 outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
@@ -132,18 +147,31 @@ def duplicate_singles(df):
     return cheat_df
 
 #%%
+    
+def getStats(df, group, data):
+    if type(group) == str:
+        group = [group]
+    stats = df.groupby(group)[data].agg(['describe','var','sem']).reset_index()
+    stat_columns = ['Count','Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
+    stats.columns = [*group, *stat_columns]
+    low,high = getCI(stats)
+    stats['CI95_low'] = low
+    stats['CI95_high'] = high
+    
+    return stats
+
+
 def getCI(df, ci=95):
-    ci95_lo = []
-    ci95_hi = []
+    ci_lo, ci_hi = [],[]
     
     for i in df.index:
         m = df.loc[i]['Mean']
         c = df.loc[i]['Count']
         s = df.loc[i]['StDev']
-        ci95_lo.append(m - 1.95*s/np.sqrt(c))
-        ci95_hi.append(m + 1.95*s/np.sqrt(c))
+        ci_lo.append(m - 1.95*s/np.sqrt(c))
+        ci_hi.append(m + 1.95*s/np.sqrt(c))
     
-    return ci95_lo, ci95_hi
+    return ci_lo, ci_hi
 
 
 #%% MAIN
@@ -232,10 +260,12 @@ if makeLineplot:
     
     # make plot for all conditions in 1 figure
     corr_df = duplicate_singles(full_df)
-    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond,)
-    x_min, x_max = plt.xlim()
-    y_min, y_max = plt.ylim()
-    
+    sns.lineplot(data = corr_df, x = spotName, y = yAxisName, hue = Cond) 
+
+    x_limits = plt.xlim()
+    y_limits = plt.ylim()
+
+
     # formatting
     plt.title(f'{yAxisName} vs {spotName}')
     plt.legend(loc = 2, prop={'size': 12})
@@ -269,9 +299,9 @@ if makeLineplot:
         
         # format axes
         plt.title(condname)
-        plt.xlim(x_min, x_max)
+        plt.xlim(x_limits)
         plt.xticks(range(max_spots+1))
-        plt.ylim(y_min, y_max)
+        plt.ylim(y_limits)
         plt.grid(lw = 0.5)
 #        plt.show()
         
@@ -303,7 +333,7 @@ if makeLineplot:
                                    scale = "width", color = 'lightskyblue', lw = 1)
                     
                     plt.title(condname + '\n' + curr_image)
-                    plt.xlim(x_min, x_max)
+                    plt.xlim(x_limits)
                     plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max() )
                     plt.grid(axis='y', lw = 0.5)
                     
@@ -320,35 +350,24 @@ if exportStats:
     print ('exporting stats as csv files')
     
     # get clustering stats per condition
-    stats_1 = full_df.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
-    stats_1.columns = [Cond,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats_1['CI95_low' ], stats_1['CI95_high'] = getCI(stats_1)
-    
-
     full_noZero = full_df[full_df[spotName] != 0]
-    stats_1b = full_noZero.groupby(Cond).agg({spotName: ['describe','var','sem']}).reset_index()
-    stats_1b.columns = [Cond,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats_1b['CI95_low' ], stats_1b['CI95_high'] = getCI(stats_1b)
-    stats_1b[Cond] = stats_1[Cond].astype(str) + '_exc0'
-    stats_1 = stats_1.append(stats_1b)
-    save_csv(stats_1, f'{spotName}_stats')
-
+    stats_1 =  getStats(full_df, Cond, spotName)
+    stats_1b = getStats(full_noZero, Cond, spotName)
+    stats_1b[Cond] = stats_1[Cond].astype(str) + '_exc0' 
+    save_csv(stats_1.append(stats_1b), f'{spotName}_stats')
 
     # get signal stats per condition / count
-    stats_2 = full_df.groupby([Cond,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
-    stats_2.columns = [Cond,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats_2['CI95_low' ], stats_2['CI95_high'] = getCI(stats_2)
-    
+    stats_2 = getStats(full_df, [Cond,spotName], yAxisName)    
     stats_2[Freq] = histogram_df[Freq]
     stats_2[Freq_noZeroes] = histogram_df[Freq_noZeroes]
     save_csv(stats_2, f'{yAxisName}_stats_summary')
 
     # get signal stats per imagge / count
-    stats_3 = full_df.groupby([Cond,Image,spotName]).agg({yAxisName : ['describe','var','sem']}).reset_index()
-    stats_3.columns = [Cond,Image,spotName,Count,'Mean','StDev','Min','25%-ile','Median','75%-ile','Max','Variance','SEM']
-    stats_3['CI95_low' ], stats_3['CI95_high'] = getCI(stats_3)
+    stats_3 = getStats(full_df, [Cond,Image,spotName], yAxisName)
     save_csv(stats_3, f'{yAxisName}_stats_per_image')
     
 
 print('')
+print('(if you got a FutureWarning, try updating pandas)')
 print('all done!')
+

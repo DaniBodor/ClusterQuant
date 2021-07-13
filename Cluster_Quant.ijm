@@ -256,7 +256,7 @@ function doLocalBgCorrection(){
 	bgArea	= largeArea - rawArea;
 	bgSignal= (largeDens - rawDens) / bgArea;
 
-	corrected_signal = rawMean - bgSignal
+	corrected_signal = rawMean - bgSignal;
 
 	return corrected_signal;
 }
@@ -574,7 +574,7 @@ function setExcludeRegions(){
 		run("Set... ", "zoom=150");
 		setLocation(2000, 50);
 		roiManager("Show All without labels");
-		setTool("polygon");
+		setTool("oval");
 
 		// manually select exclusio regions
 		roiManager("select", 0);

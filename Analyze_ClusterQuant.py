@@ -376,6 +376,6 @@ if exportStats:
     
 
 print('')
-print('(if you got a FutureWarning, try updating pandas)')
+#print('(if you got a FutureWarning, try updating pandas)')
 print('all done!')
 

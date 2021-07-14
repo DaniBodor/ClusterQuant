@@ -561,7 +561,6 @@ function setExcludeRegions(){
 	
 	// load existing ROI files if they exist
 	oldROI_file = preload_ROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
-	print(oldROI_file);
 	if (preloadRegions && File.exists(oldROI_file) ){
 		roiManager("reset");
 		roiManager("open", oldROI_file);

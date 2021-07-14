@@ -40,10 +40,10 @@ outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = True # create histogram of spot data
-makeLineplot    = True # create a correlation graph between spots and intensities
-makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
-exportStats     = True # output CSVs for further processing
+makeHisto       = 0 # create histogram of spot data
+makeLineplot    = 0 # create a correlation graph between spots and intensities
+makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
+exportStats     = 0 # output CSVs for further processing
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -199,17 +199,18 @@ if readData:
         elif l.startswith('***'):
             Folder = l[3:]
         elif l.startswith('**'):
-            File = name_cleaner(l[2:])
-            spots =  [float   ( s.strip() ) for s in lines[i+1].split(',')]
-            signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
-            
-            indata = {spotName: spots,
-                      yAxisName: signal,
-                      Cond:  [Folder]*len(spots),
-                      Image: [File]*len(spots)}
-            
-            file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
-            full_df = full_df.append(file_df)                # add cell to dataframe
+            if lines[i+1]:
+                File = name_cleaner(l[2:])
+                spots =  [float   ( s.strip() ) for s in lines[i+1].split(',')]
+                signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
+                
+                indata = {spotName: spots,
+                          yAxisName: signal,
+                          Cond:  [Folder]*len(spots),
+                          Image: [File]*len(spots)}
+                
+                file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
+                full_df = full_df.append(file_df)                # add cell to dataframe
         
     full_df = full_df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
     full_df[spotName] = full_df[spotName].astype(int)
@@ -231,7 +232,7 @@ if makeHisto:
     
     for x in range(2):
         too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
-        too_many_bars       = max_histo_bars            >   len(full_df[Cond].unique()) * full_df[spotName].max()
+        too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
         # generate plot
         if too_many_conditions or too_many_bars:
             sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)

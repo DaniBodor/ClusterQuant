@@ -206,7 +206,7 @@ if readData:
                 signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
                 
                 # drop nan elements from both lists (not sure why they appear in the first place)
-                nanlist = [x for x in range(len(spots))   if np.isnan(spots[x])]
+                nanlist = [x for x in range(len(spots))   if ( np.isnan(spots[x]) or np.isinf(signal[x]) )]
                 spots =   [x for n,x in enumerate(spots)  if n not in nanlist]
                 signal =  [x for n,x in enumerate(signal) if n not in nanlist]
                 
@@ -219,7 +219,7 @@ if readData:
                 file_df = pd.DataFrame.from_dict(indata)         # create dataframe from cell
                 full_df = full_df.append(file_df)                # add cell to dataframe
         
-    full_df = full_df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+#    full_df = full_df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
     full_df[spotName] = full_df[spotName].astype(int)
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right

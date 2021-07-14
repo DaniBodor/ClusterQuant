@@ -199,11 +199,18 @@ if readData:
         elif l.startswith('***'):
             Folder = l[3:]
         elif l.startswith('**'):
-            if lines[i+1]:
+            if lines[i+1]: # excludes skipped cells.
+                # read data from file
                 File = name_cleaner(l[2:])
-                spots =  [float   ( s.strip() ) for s in lines[i+1].split(',')]
+                spots =  [float ( s.strip() ) for s in lines[i+1].split(',')]
                 signal = [float ( s.strip() ) for s in lines[i+2].split(',')]
                 
+                # drop nan elements from both lists (not sure why they appear in the first place)
+                nanlist = [x for x in range(len(spots))   if np.isnan(spots[x])]
+                spots =   [x for n,x in enumerate(spots)  if n not in nanlist]
+                signal =  [x for n,x in enumerate(signal) if n not in nanlist]
+                
+                # assemble dataframe
                 indata = {spotName: spots,
                           yAxisName: signal,
                           Cond:  [Folder]*len(spots),

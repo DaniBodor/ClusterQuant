@@ -256,7 +256,7 @@ function doLocalBgCorrection(){
 	bgArea	= largeArea - rawArea;
 	bgSignal= (largeDens - rawDens) / bgArea;
 
-	corrected_signal = rawMean - bgSignal
+	corrected_signal = rawMean - bgSignal;
 
 	return corrected_signal;
 }
@@ -558,10 +558,8 @@ function makeMask(){
 
 // step 2
 function setExcludeRegions(){
-	
 	// load existing ROI files if they exist
 	oldROI_file = preload_ROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
-	print(oldROI_file);
 	if (preloadRegions && File.exists(oldROI_file) ){
 		roiManager("reset");
 		roiManager("open", oldROI_file);
@@ -574,7 +572,7 @@ function setExcludeRegions(){
 		run("Set... ", "zoom=150");
 		setLocation(2000, 50);
 		roiManager("Show All without labels");
-		setTool("polygon");
+		setTool("oval");
 
 		// manually select exclusio regions
 		roiManager("select", 0);

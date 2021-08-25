@@ -231,7 +231,7 @@ if makeHisto:
     
     for x in range(2):
         too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
-        too_many_bars       = max_histo_bars            >   len(full_df[Cond].unique()) * full_df[spotName].max()
+        too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
         # generate plot
         if too_many_conditions or too_many_bars:
             sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)

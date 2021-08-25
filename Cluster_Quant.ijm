@@ -1,3 +1,5 @@
+//////////////////////////// PRELIMINARIES ////////////////////////////
+
 main_data_default = "";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
@@ -25,6 +27,8 @@ while (isOpen("Exception")) {
 //run("Text Window...", "name=" + debugWindow + " width=80 height=24 menu");		setLocation(3200, 140);		debugWindow = "[" + debugWindow + "]";
 
 
+
+//////////////////////////// DEFAULTS & OPENING DIALOG ////////////////////////////
 
 // load defaults
 defaults_dir = getDirectory("imagej") + "defaults" + File.separator;
@@ -139,6 +143,9 @@ if ( extended_settings || dnaChannel < 0 ) Dialog.show();
 	// Crop border
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
+
+//////////////////////////// INPUT/OUTPUT ////////////////////////////
+
 // save defaults
 defaults = export_defaults();
 
@@ -158,6 +165,9 @@ subdirs = getFileList (dir);
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
 print("****", clusterName, correlName, gridSize, winDisplacement);
+
+
+//////////////////////////// RUN THROUGH FILES ////////////////////////////
 
 
 // loop through individual conditions within base data folder
@@ -191,6 +201,9 @@ for (d = 0; d < subdirs.length; d++) {
 }
 
 
+
+//////////////////////////// FINISHING ////////////////////////////
+
 // print end time and save log
 print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
 print(nondataprefix, "Total duration:", round((getTime() - start)/100)/10, "seconds");
@@ -211,9 +224,13 @@ if(isOpen("Results")){
 
 
 
-/////////////////////////////////////////////////////////
-//////////////////// MINOR FUNCTIONS ////////////////////
-/////////////////////////////////////////////////////////
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+//////////////////////////// MINOR FUNCTIONS ////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 function fetchTimeStamp(format){
 	// allows for nice formatting of datetime
@@ -229,6 +246,7 @@ function fetchTimeStamp(format){
 	if (format == file_naming)		return DateTime;
 }
 
+/////////////////////////////////////////////////////////////////////////
 
 function memoryDump(n){
 	//print("memory used prior to memory dump: " + IJ.freeMemory());
@@ -236,12 +254,43 @@ function memoryDump(n){
 	//print(nondataprefix, "memory used after " + n + "x memory dump: " + IJ.freeMemory());
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function cropEdges(x){
 	if (x > 0) {
 		makeRectangle(deconvCrop, deconvCrop, getWidth-deconvCrop*2, getHeight-deconvCrop*2);
 		run("Crop");
 	}
 }
+
+/////////////////////////////////////////////////////////////////////////
+
+function saveLog(){
+	selectWindow("Log");
+	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
+}
+
+/////////////////////////////////////////////////////////////////////////
+//////////////////////////// FUNCTIONAL FUNCTIONS ///////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+function alt_grid(){
+	box = gridSize;
+	roiManager("select", 0);
+	setThreshold(1, 255);
+	run("Analyze Particles...", "display clear add");
+	roiManager("Show None");
+	resetMinAndMax;
+	
+	for (i = 0; i < roiManager("count"); i++) {
+		roiManager("select", i);
+		getSelectionBounds(x, y, width, height);
+		makeRectangle(x-box/2, y-box/2, box+1, box+1);
+		roiManager("update");
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 function doLocalBgCorrection(){
 
@@ -261,13 +310,9 @@ function doLocalBgCorrection(){
 	return corrected_signal;
 }
 
-function saveLog(){
-	selectWindow("Log");
-	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
-}
+/////////////////////////////////////////////////////////////////////////
 
 function import_defaults(){ 
-	
 	// set pre-defaults for first time
 	defaults = newArray();
 	defaults[0] = "_" 				;//dir 				= Dialog.getString();
@@ -290,7 +335,6 @@ function import_defaults(){
 	defaults[17] = 0 				;//deconvCrop		= Dialog.getNumber();
 
 	// import previous defaults if they exist
-	
 	if (File.exists(defaults_file)) {
 		def_str = File.openAsString(defaults_file);
 		imp_def = split(def_str, ",");
@@ -317,6 +361,8 @@ function import_defaults(){
 	}
 	return defaults;
 }
+
+/////////////////////////////////////////////////////////////////////////
 
 function export_defaults(){
 	defaults = newArray();
@@ -357,6 +403,8 @@ function export_defaults(){
 	return defaults;
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function test_1(){
 	selectImage(ori);
 	setSlice(clusterChannel);
@@ -387,6 +435,8 @@ function test_1(){
 	run("Remove Overlay");
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function test_2(){
 	run("Tile");
 	for (i = 1; i <= nImages; i++) {
@@ -406,10 +456,9 @@ function test_2(){
 	roiManager("delete");
 }
 
-////////////////////////////////////////////////////////
-//////////////////// MAIN FUNCTIONS ////////////////////
-////////////////////////////////////////////////////////
-
+/////////////////////////////////////////////////////////////////////////
+///////////////////////////// MAIN FUNCTIONS ////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 function clusterQuantification(){
 
@@ -448,7 +497,7 @@ function clusterQuantification(){
 	saveLog();
 }
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 1
 function makeMask(){
 	// load old ROIs of 
@@ -555,7 +604,7 @@ function makeMask(){
 	roiManager("rename", "Analysis region");
 }
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 2
 function setExcludeRegions(){
 	// load existing ROI files if they exist
@@ -593,7 +642,7 @@ function setExcludeRegions(){
 	}
 }
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 3
 function makeGrid() {
 
@@ -627,7 +676,7 @@ function makeGrid() {
 }
 
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 4
 function measureClustering(){
 
@@ -713,19 +762,3 @@ function measureClustering(){
 	return data;
 }
 
-
-function alt_grid(){
-	box = gridSize;
-	roiManager("select", 0);
-	setThreshold(1, 255);
-	run("Analyze Particles...", "display clear add");
-	roiManager("Show None");
-	resetMinAndMax;
-	
-	for (i = 0; i < roiManager("count"); i++) {
-		roiManager("select", i);
-		getSelectionBounds(x, y, width, height);
-		makeRectangle(x-box/2, y-box/2, box+1, box+1);
-		roiManager("update");
-	}
-}

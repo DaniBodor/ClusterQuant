@@ -562,7 +562,6 @@ function makeMask(){
 
 		if (settingsTester)	test_1();
 		
-		//close(mask);
 	}
 	
 	else if (dnaChannel < 0){ // manual selection of analysis region
@@ -607,7 +606,6 @@ function makeMask(){
 		getSelectionBounds(_x_, _y_, _, _);
 		doWand(_x_, _y_);
 		roiManager("update");
-		//close(mask);
 	}
 	
 	else { //no mask
@@ -700,6 +698,7 @@ function measureClustering(){
 	spots_im = getTitle();
 
 	getRegions();
+	close(mask);
 
 	setMinAndMax(0,0);
 	run("Select None");
@@ -714,32 +713,6 @@ function measureClustering(){
 	
 	if (settingsTester)	test_2();
 
-	selectImage(spotIM);
-	for (roi = 0; roi < roiManager("count"); roi++) {
-		// troubleshooting below, because for some reason sometimes it makes the measurement in the wrong image
-		_i = 0;
-		check = 15;
-		while ( getTitle() == ori ){
-			selectImage(spotIM);
-			_i ++;
-			if (_i % check == 0)	waitForUser("##### ERROR 1:" + 15 + "cycles have passed and still wrong image selected");
-		}
-		// troubleshooting over
-		
-		roiManager("select",roi);
-		
-		// 2nd troubleshooting
-		if (getTitle() == ori){
-			waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
-			Spots[roi] = "nan";
-		}
-		// troubleshooting over
-		else {
-			Spots[roi] = getValue("IntDen");
-		}
-		
-	}
-
 	// Measure correlation (separate loop from above saves a lot of time!)
 	selectImage(ori);
 	setSlice(correlChanel);
@@ -750,6 +723,13 @@ function measureClustering(){
 		if (bgMeth == background_methods[2])	Intensities[roi] = doLocalBgCorrection();	// local bg correction
 		else									Intensities[roi] = rawMean - globalBG; 		// global BG
 	}
+	close(ori);
+
+	selectImage(spotIM);
+	for (roi = 0; roi < roiManager("count"); roi++) {
+		roiManager("select",roi);
+		Spots[roi] = getValue("IntDen");
+	}
 
 	run("Select None");
 
@@ -757,6 +737,7 @@ function measureClustering(){
 	print("**", ori);
 	Array.print(Spots);
 	Array.print(Intensities);
+	//waitForUser("test");
 
 	data = Array.concat(Spots,Intensities);
 	return data;

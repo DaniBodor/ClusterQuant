@@ -485,7 +485,7 @@ function clusterQuantification(){
 	// run sequential steps:
 		// step 1: get DAPI outline
 		mask = makeMask();
-		waitForUser("finished step 1: DAPI outline");
+		//waitForUser("finished step 1: DAPI outline");
 		// step 2: exclude regions
 		if (excludeRegions) 	setExcludeRegions();
 		else roiManager("save", ROIfile);
@@ -616,7 +616,7 @@ function makeMask(){
 	// save ROI file
 	selectImage(ori);
 	roiManager("select", 0);
-	roiManager("rename", "Analysis region");
+	roiManager("rename", "Analysis_Region");
 
 	return mask;
 }
@@ -646,17 +646,23 @@ function setExcludeRegions(){
 		roiManager("update");
 		run("Select None");
 		waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
+		roiManager("deselect");
+		roiManager("combine"); // apparently this overwrites the original. will re-add below
 		roiManager("select", 0);
 		run("Make Inverse");
 		roiManager("update");
 		
 		// rename ROIs and save
 		selectImage(mask);
-		for (roi = 1; roi < roiManager("count"); roi++) {
+		run("Analyze Particles...", "add");	// re-add region of DAPI outline
+		roiManager("select", roiManager("count")-1)
+		roiManager("rename", "DAPI_Region");
+		for (roi = 1; roi < roiManager("count")-1; roi++) {
 			roiManager("select", roi);
 			roiManager("rename", "Exclude_Region_"+roi);
 			fill();
-		}
+		}		
+		roiManager("deselect");
 		roiManager("save", ROIfile);
 	}
 }

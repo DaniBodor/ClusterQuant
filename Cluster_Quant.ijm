@@ -1,5 +1,6 @@
 //////////////////////////// PRELIMINARIES ////////////////////////////
 
+
 main_data_default = "";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
@@ -61,8 +62,8 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" SLIDING WINDOWS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Window size", 		defaults[8],0,5, "pixels");
-	Dialog.addNumber("Window displacement",	defaults[9],0,5, "pixels");
+	Dialog.addNumber("Neighbourhood diameter", 	defaults[8],0,5, "pixels");
+	Dialog.addNumber("Minimum area fraction",	defaults[9],0,5, "%");
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
@@ -94,7 +95,7 @@ Dialog.show();	// retrieve input
 
 	// grid parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
-	winDisplacement =	Dialog.getNumber(); // pixel displacement of grid at each step
+	minAreaFraction =	Dialog.getNumber(); // pixel displacement of grid at each step
 
 	// Manual ROI exclusion
 	excludeRegions =	Dialog.getCheckbox();
@@ -164,7 +165,7 @@ subdirs = getFileList (dir);
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
-print("****", clusterName, correlName, gridSize, winDisplacement);
+print("****", clusterName, correlName, gridSize, minAreaFraction);
 
 
 //////////////////////////// RUN THROUGH FILES ////////////////////////////
@@ -274,19 +275,29 @@ function saveLog(){
 //////////////////////////// FUNCTIONAL FUNCTIONS ///////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-function alt_grid(){
-	box = gridSize;
+function getRegions(){
 	roiManager("select", 0);
 	setThreshold(1, 255);
-	run("Analyze Particles...", "display clear add");
+	run("Analyze Particles...", "clear add");
 	roiManager("Show None");
 	resetMinAndMax;
 	
 	for (i = 0; i < roiManager("count"); i++) {
 		roiManager("select", i);
 		getSelectionBounds(x, y, width, height);
-		makeRectangle(x-box/2, y-box/2, box+1, box+1);
+		makeOval(x-gridSize/2, y-gridSize/2, gridSize+1, gridSize+1);
 		roiManager("update");
+	}
+	if (mask != ""){
+		selectWindow(mask);
+		nInitialRois = RoiManager.size;
+		for (i = 0; i < nInitialRois; i++) {
+			roiManager("select",  nInitialRois - 1 - i);
+			getStatistics(area, mean, min, max, std, histogram);
+			if (mean < 255 * minAreaFraction){
+				roiManager("delete");
+			}
+		}
 	}
 }
 
@@ -324,7 +335,7 @@ function import_defaults(){
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
 	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
-	defaults[9] = 2 				;//winDisplacement	= Dialog.getNumber();
+	defaults[9] = 2 				;//minAreaFraction	= Dialog.getNumber();
 	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
 	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
@@ -375,7 +386,7 @@ function export_defaults(){
 	defaults[6] = correlName;
 	defaults[7] = dnaChannel;
 	defaults[8] = gridSize;
-	defaults[9] = winDisplacement;
+	defaults[9] = minAreaFraction;
 	defaults[10] = prominence;
 	defaults[11] = excludeRegions;
 	defaults[12] = preloadRegions;
@@ -473,7 +484,7 @@ function clusterQuantification(){
 
 	// run sequential steps:
 		// step 1: get DAPI outline
-		makeMask();
+		mask = makeMask();
 		waitForUser("finished step 1: DAPI outline");
 		// step 2: exclude regions
 		if (excludeRegions) 	setExcludeRegions();
@@ -503,6 +514,7 @@ function clusterQuantification(){
 /////////////////////////////////////////////////////////////////////////
 // step 1
 function makeMask(){
+	mask = "";
 	// load old ROIs
 	if (File.isDirectory(oldMaskRoiDir)){
 		roiManager("reset");
@@ -548,7 +560,7 @@ function makeMask(){
 
 		if (settingsTester)	test_1();
 		
-		close(mask);
+		//close(mask);
 	}
 	
 	else if (dnaChannel < 0){ // manual selection of analysis region
@@ -593,7 +605,7 @@ function makeMask(){
 		getSelectionBounds(_x_, _y_, _, _);
 		doWand(_x_, _y_);
 		roiManager("update");
-		close(mask);
+		//close(mask);
 	}
 	
 	else { //no mask
@@ -605,6 +617,8 @@ function makeMask(){
 	selectImage(ori);
 	roiManager("select", 0);
 	roiManager("rename", "Analysis region");
+
+	return mask;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -646,40 +660,6 @@ function setExcludeRegions(){
 }
 
 /////////////////////////////////////////////////////////////////////////
-// step 3
-function makeGrid() {
-
-	// make cell mask image and exlude MTOCs (only black region will be read)
-	selectImage(ori);
-	newImage("newMask", "8-bit", getWidth, getHeight, 1);	// creates white image
-	mask = getTitle();
-	roiManager("select", 0);
-	run("Invert");				// makes cell/nuclear outline black
-	roiManager("delete");
-	roiManager("fill");			// makes exclude regions white
-	roiManager("reset");
-
-	// make grid around mask (used to center windows around mask area)	//######## not sure what i meant by this comment, but it works...
-	W_offset = (getWidth()  % winDisplacement) / 2;
-	H_offset = (getHeight() % winDisplacement) / 2;
-
-	for (x = W_offset; x < getWidth()-W_offset; x+=winDisplacement) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=winDisplacement) {
-			makeRectangle(x, y, gridSize, gridSize);
-			getStatistics(area, mean);
-			if (mean == 0 && area == gridSize*gridSize)		roiManager("add");	// only add regions that are completely contained in mask (and within image borders)
-		}
-	}
-	close(mask);
-
-	selectImage(ori);
-	run("Select None");
-	roiManager("Remove Channel Info");
-	roiManager("Show All without labels");
-}
-
-
-/////////////////////////////////////////////////////////////////////////
 // step 4
 function measureClustering(){
 
@@ -693,8 +673,11 @@ function measureClustering(){
 	roiManager("Show All without labels");
 	spots_im = getTitle();
 
-	alt_grid();
+	getRegions();
 
+	setMinAndMax(0,0);
+	run("Select None");
+	roiManager("Show All without labels");
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
 	spotIM = getTitle();
 	run("Tile");

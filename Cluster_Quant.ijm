@@ -651,9 +651,11 @@ function setExcludeRegions(){
 		roiManager("update");
 		
 		// rename ROIs and save
+		selectImage(mask);
 		for (roi = 1; roi < roiManager("count"); roi++) {
 			roiManager("select", roi);
 			roiManager("rename", "Exclude_Region_"+roi);
+			fill();
 		}
 		roiManager("save", ROIfile);
 	}

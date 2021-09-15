@@ -62,7 +62,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" SLIDING WINDOWS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Neighbourhood diameter", 	defaults[8],0,5, "pixels");
+	Dialog.addNumber("Measurement radius",	 	defaults[8],0,5, "pixels");
 	Dialog.addNumber("Minimum area fraction",	defaults[9],0,5, "%");
 
 	Dialog.setInsets(10,0,0);
@@ -94,7 +94,7 @@ Dialog.show();	// retrieve input
 	correlName =		Dialog.getString(); // for y-axis title
 
 	// grid parameters
-	gridSize =			Dialog.getNumber();	// size of individual windows to measure
+	radius =			Dialog.getNumber();	// size of individual windows to measure
 	minAreaPerc =		Dialog.getNumber(); // pixel displacement of grid at each step
 
 	// Manual ROI exclusion
@@ -165,7 +165,7 @@ subdirs = getFileList (dir);
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
-print("****", clusterName, correlName, gridSize, minAreaPerc);
+print("****", clusterName, correlName, radius, minAreaPerc);
 
 
 //////////////////////////// RUN THROUGH FILES ////////////////////////////
@@ -285,7 +285,7 @@ function getRegions(){
 	for (i = 0; i < roiManager("count"); i++) {
 		roiManager("select", i);
 		getSelectionBounds(x, y, width, height);
-		makeOval(x-gridSize/2, y-gridSize/2, gridSize+1, gridSize+1);
+		makeOval(x-radius, y-radius, 2*radius+1, 2*radius+1);
 		roiManager("update");
 	}
 	if (mask != ""){
@@ -336,8 +336,8 @@ function import_defaults(){
 	defaults[5] = 3 				;//correlChanel 	= Dialog.getNumber();
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
-	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
-	defaults[9] = 2 				;//minAreaPerc	= Dialog.getNumber();
+	defaults[8] = 12 				;//radius 			= Dialog.getNumber();
+	defaults[9] = 2 				;//minAreaPerc		= Dialog.getNumber();
 	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
 	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
@@ -387,7 +387,7 @@ function export_defaults(){
 	defaults[5] = correlChanel;
 	defaults[6] = correlName;
 	defaults[7] = dnaChannel;
-	defaults[8] = gridSize;
+	defaults[8] = radius;
 	defaults[9] = minAreaPerc;
 	defaults[10] = prominence;
 	defaults[11] = excludeRegions;
@@ -728,7 +728,7 @@ function measureClustering(){
 	selectImage(spotIM);
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
-		Spots[roi] = getValue("IntDen");
+		Spots[roi] = getValue("IntDen")-1;
 	}
 
 	run("Select None");

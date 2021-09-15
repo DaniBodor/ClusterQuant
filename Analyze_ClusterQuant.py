@@ -178,10 +178,10 @@ if readData:
         if l.startswith('****'):
             spotName    = l.split(' ')[1]
             yAxisName   = l.split(' ')[2]
-            windowSize  = l.split(' ')[3]
-            winDisplace = l.split(' ')[4].strip()
+            radius  = l.split(' ')[3]
+            areaPercent = l.split(' ')[4].strip()
             full_df = pd.DataFrame()
-            outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
+            outputDir = outputDir + f'_size{radius}_areaperc{areaPercent}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
 

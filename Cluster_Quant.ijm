@@ -95,7 +95,7 @@ Dialog.show();	// retrieve input
 
 	// grid parameters
 	gridSize =			Dialog.getNumber();	// size of individual windows to measure
-	minAreaFraction =	Dialog.getNumber(); // pixel displacement of grid at each step
+	minAreaPerc =		Dialog.getNumber(); // pixel displacement of grid at each step
 
 	// Manual ROI exclusion
 	excludeRegions =	Dialog.getCheckbox();
@@ -165,7 +165,7 @@ subdirs = getFileList (dir);
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
-print("****", clusterName, correlName, gridSize, minAreaFraction);
+print("****", clusterName, correlName, gridSize, minAreaPerc);
 
 
 //////////////////////////// RUN THROUGH FILES ////////////////////////////
@@ -293,12 +293,14 @@ function getRegions(){
 		nInitialRois = RoiManager.size;
 		for (i = 0; i < nInitialRois; i++) {
 			roiManager("select",  nInitialRois - 1 - i);
+			
 			getStatistics(area, mean, min, max, std, histogram);
-			if (mean < 255 * minAreaFraction){
+			if (mean < 255 * minAreaPerc / 100){
 				roiManager("delete");
 			}
 		}
 	}
+	//waitForUser("Finished getRegions");
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -335,7 +337,7 @@ function import_defaults(){
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
 	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
-	defaults[9] = 2 				;//minAreaFraction	= Dialog.getNumber();
+	defaults[9] = 2 				;//minAreaPerc	= Dialog.getNumber();
 	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
 	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
@@ -386,7 +388,7 @@ function export_defaults(){
 	defaults[6] = correlName;
 	defaults[7] = dnaChannel;
 	defaults[8] = gridSize;
-	defaults[9] = minAreaFraction;
+	defaults[9] = minAreaPerc;
 	defaults[10] = prominence;
 	defaults[11] = excludeRegions;
 	defaults[12] = preloadRegions;
@@ -489,14 +491,14 @@ function clusterQuantification(){
 		// step 2: exclude regions
 		if (excludeRegions) 	setExcludeRegions();
 		else roiManager("save", ROIfile);
-		waitForUser("finished step 2: exclude regions");
+		//waitForUser("finished step 2: exclude regions");
 		// step 3: make grid
 		//makeGrid();
 		// step 4: make measurements
 		before = getTime();
 		allData = measureClustering();
 		duration = round((getTime() - before)/100)/10;
-		waitForUser("finished step 4: make measurements");
+		//waitForUser("finished step 4: make measurements");
 		
 	// retrieve separate arrays from allData
 	clusterList = Array.slice(allData, 0, allData.length/2);

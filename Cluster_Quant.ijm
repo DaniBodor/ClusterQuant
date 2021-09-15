@@ -503,9 +503,9 @@ function clusterQuantification(){
 	intensList	= Array.slice(allData, allData.length/2, allData.length);
 
 	// print info
-	print("**", ori);
-	Array.print(clusterList);
-	Array.print(intensList);
+	//print("**", ori);
+	//Array.print(clusterList);
+	//Array.print(intensList);
 	//print(nondataprefix, "duration:", duration, "sec");
 	
 	saveLog();
@@ -664,6 +664,22 @@ function setExcludeRegions(){
 /////////////////////////////////////////////////////////////////////////
 // step 4
 function measureClustering(){
+	// get global bg
+	globalBG = 1;	// for no background correction
+	if (bgMeth == background_methods[1]) {	// global bg correction
+		selectImage(ori);
+		setSlice(correlChanel);
+		roiManager("select", 0);
+		_ = 0;
+		while (getTitle() != ori) {
+			selectImage(ori);
+			_++;
+			if ( _ > 15) {
+				exit("crashed on BG measurement of image: " + ori);
+			}
+		}
+		globalBG = getValue("Median");
+	}
 
 	// find kinetochores
 	selectImage(ori);
@@ -683,23 +699,6 @@ function measureClustering(){
 	saveAs("Tiff", subout + ori + "_Maxima.tif");
 	spotIM = getTitle();
 	run("Tile");
-
-	// get global bg
-	globalBG = 1;	// for no background correction
-	if (bgMeth == background_methods[1]) {	// global bg correction
-		selectImage(ori);
-		setSlice(correlChanel);
-		roiManager("combine");
-		_ = 0;
-		while (getTitle() != ori) {
-			selectImage(ori);
-			_++;
-			if ( _ > 15) {
-				exit("crashed on BG measurement of image: " + ori);
-			}
-		}
-		globalBG = getValue("Median");
-	}
 
 	// count number of CEN spots
 	Spots = newArray();
@@ -723,7 +722,7 @@ function measureClustering(){
 		
 		// 2nd troubleshooting
 		if (getTitle() == ori){
-			//waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
+			waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
 			Spots[roi] = "nan";
 		}
 		// troubleshooting over
@@ -745,6 +744,11 @@ function measureClustering(){
 	}
 
 	run("Select None");
+
+	// print results
+	print("**", ori);
+	Array.print(Spots);
+	Array.print(Intensities);
 
 	data = Array.concat(Spots,Intensities);
 	return data;

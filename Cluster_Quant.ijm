@@ -474,15 +474,18 @@ function clusterQuantification(){
 	// run sequential steps:
 		// step 1: get DAPI outline
 		makeMask();
+		waitForUser("finished step 1: DAPI outline");
 		// step 2: exclude regions
 		if (excludeRegions) 	setExcludeRegions();
 		else roiManager("save", ROIfile);
+		waitForUser("finished step 2: exclude regions");
 		// step 3: make grid
 		//makeGrid();
 		// step 4: make measurements
 		before = getTime();
 		allData = measureClustering();
 		duration = round((getTime() - before)/100)/10;
+		waitForUser("finished step 4: make measurements");
 		
 	// retrieve separate arrays from allData
 	clusterList = Array.slice(allData, 0, allData.length/2);
@@ -500,7 +503,7 @@ function clusterQuantification(){
 /////////////////////////////////////////////////////////////////////////
 // step 1
 function makeMask(){
-	// load old ROIs of 
+	// load old ROIs
 	if (File.isDirectory(oldMaskRoiDir)){
 		roiManager("reset");
 		oldROIfile = oldMaskRoiDir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";

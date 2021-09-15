@@ -251,6 +251,10 @@ if makeHisto:
         plt.savefig(figurePath, dpi=600)
     #    plt.show()
         plt.clf()
+        
+        
+        # make scatterplot
+        
 
 
 #%% MAKE COORELATION GRAPHS

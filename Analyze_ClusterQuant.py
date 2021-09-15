@@ -55,7 +55,6 @@ max_histo_bars = 50
 Cond = 'Condition'
 Image = 'Cell'
 Freq = 'Frequency'
-Freq_noZeroes = 'Frequency_'
 Count = 'Count'
 
 
@@ -79,16 +78,6 @@ def make_histdf(df):
                      .rename(Freq)
                      .reset_index() )
     output_df[Freq] = df2[Freq]
-    
-    # Get 0-free frequencies
-    with pd.option_context('mode.chained_assignment',None):
-        output_df[Freq_noZeroes] = output_df[Count]
-        zeroes = output_df[spotName] == 0
-        output_df[Freq_noZeroes][zeroes] = np.nan
-        
-        sum_df = output_df.groupby([Cond])[Freq_noZeroes].sum().reset_index()
-        for i,f in enumerate(output_df[Freq_noZeroes]):
-            output_df[Freq_noZeroes][i] = f / sum_df[Freq_noZeroes][sum_df[Cond] == output_df[Cond][i]]
 
     
     if MaxLength_CondName:
@@ -227,30 +216,23 @@ if makeHisto:
     histogram_df = make_histdf(full_df)
     save_csv(histogram_df, 'Histogram')
     
-    y_data = [Freq,Freq_noZeroes]
+    too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
+    too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
+    # generate plot
+    if too_many_conditions or too_many_bars:
+        sns.lineplot(x=spotName, y=Freq, hue=Cond, data=histogram_df)
+    else:
+        sns.barplot (x=spotName, y=Freq, hue=Cond, data=histogram_df)
     
-    for x in range(2):
-        too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
-        too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
-        # generate plot
-        if too_many_conditions or too_many_bars:
-            sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
-        else:
-            sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
-        
-        # plot formatting
-        plt.legend(loc = 1, prop={'size': 12})
-        plt.title(f'{spotName} per {windowSize}x{windowSize} square (displ: {winDisplace})')
-#        plt.xlabel(spotName)
-        plt.ylabel(Freq)
-        plt.grid(axis='y', lw = 0.5)
-        if x == 1:
-            plt.xlim(left=0.5)
-        # save plot
-        figurePath = os.path.join(outputDir, f'Histogram_{x}-based.png')
-        plt.savefig(figurePath, dpi=600)
-    #    plt.show()
-        plt.clf()
+    # plot formatting
+    plt.legend(loc = 1, prop={'size': 12})
+    plt.title(f'Other {spotName} within {radius} pixels distance')
+    plt.ylabel(Freq)
+    plt.grid(axis='y', lw = 0.5)
+    # save plot
+    figurePath = os.path.join(outputDir, 'Histogram.png')
+    plt.savefig(figurePath, dpi=600)
+    plt.clf()
         
         
         # make scatterplot
@@ -354,18 +336,14 @@ if exportStats:
     print ('exporting stats as csv files')
     
     # get clustering stats per condition
-    full_noZero = full_df[full_df[spotName] != 0]
     stats_1 =  getStats(full_df, Cond, spotName)
-    stats_1b = getStats(full_noZero, Cond, spotName)
-    stats_1b[Cond] = stats_1[Cond].astype(str) + '_exc0' 
-    save_csv(stats_1.append(stats_1b), f'{spotName}_stats')
-
+    save_csv(stats_1, f'{spotName}_stats')
+    
     # get signal stats per condition / count
     stats_2 = getStats(full_df, [Cond,spotName], yAxisName)    
     stats_2[Freq] = histogram_df[Freq]
-    stats_2[Freq_noZeroes] = histogram_df[Freq_noZeroes]
     save_csv(stats_2, f'{yAxisName}_stats_summary')
-
+    
     # get signal stats per imagge / count
     stats_3 = getStats(full_df, [Cond,Image,spotName], yAxisName)
     save_csv(stats_3, f'{yAxisName}_stats_per_image')

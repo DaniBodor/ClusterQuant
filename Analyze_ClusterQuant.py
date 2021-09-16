@@ -383,7 +383,7 @@ if makePrismOutput:
     for c in headers[1:]:
         col = [x if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
         data.append(col)
-    prism_output(prism_type, headers, data)
+#    prism_output(prism_type, headers, data)
     
     
     # scatterplot (swarmplot) with noise, using full_df
@@ -395,9 +395,25 @@ if makePrismOutput:
         r = np.random.uniform(low = -max_noise, high = max_noise, size = len(full_df[spotName]))
         col = [x+r[i] if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
         data.append(col)
-    prism_output(prism_type, headers, data)
+#    prism_output(prism_type, headers, data)
     
-  
+    
+    # Line graph per image, using stats3
+    prism_type = 'XY_by image'
+    Conds = [cond for cond in stats_3[Cond].unique()]
+    
+    headers = ['',spotName]
+    for c in Conds:
+        ims = [f'{c} - {im}' for im in stats_3[stats_3[Cond] == c][Image].unique() ]
+        ims = [ele for ele in ims for i in range(3)]
+        headers = headers + ims
+    
+    data = [list(stats_3[Image]), list(stats_3[spotName]) ]
+    for index, row in stats_3.iterrows():
+        line = [row[1], row[2], row[4], row[3], row[5]]
+    
+    
+
 
 
 print('')

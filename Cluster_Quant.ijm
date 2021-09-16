@@ -1,3 +1,6 @@
+//////////////////////////// PRELIMINARIES ////////////////////////////
+
+
 main_data_default = "";
 nondataprefix = "##### "// printed in lines that are not data, will be ignored by python code
 printIMname = 0;		// set to 0 or 1 depending on whether you want image name printed to log
@@ -25,6 +28,8 @@ while (isOpen("Exception")) {
 //run("Text Window...", "name=" + debugWindow + " width=80 height=24 menu");		setLocation(3200, 140);		debugWindow = "[" + debugWindow + "]";
 
 
+
+//////////////////////////// DEFAULTS & OPENING DIALOG ////////////////////////////
 
 // load defaults
 defaults_dir = getDirectory("imagej") + "defaults" + File.separator;
@@ -57,8 +62,8 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" SLIDING WINDOWS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Window size", 		defaults[8],0,5, "pixels");
-	Dialog.addNumber("Window displacement",	defaults[9],0,5, "pixels");
+	Dialog.addNumber("Measurement radius",	 	defaults[8],0,5, "pixels");
+	Dialog.addNumber("Minimum area fraction",	defaults[9],0,5, "%");
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
@@ -89,8 +94,8 @@ Dialog.show();	// retrieve input
 	correlName =		Dialog.getString(); // for y-axis title
 
 	// grid parameters
-	gridSize =			Dialog.getNumber();	// size of individual windows to measure
-	winDisplacement =	Dialog.getNumber(); // pixel displacement of grid at each step
+	radius =			Dialog.getNumber();	// size of individual windows to measure
+	minAreaPerc =		Dialog.getNumber(); // pixel displacement of grid at each step
 
 	// Manual ROI exclusion
 	excludeRegions =	Dialog.getCheckbox();
@@ -139,6 +144,9 @@ if ( extended_settings || dnaChannel < 0 ) Dialog.show();
 	// Crop border
 	deconvCrop =	Dialog.getNumber();	// pixels to crop around each edge (generally 16 for DV Elite). Set to 0 to not crop at all.
 
+
+//////////////////////////// INPUT/OUTPUT ////////////////////////////
+
 // save defaults
 defaults = export_defaults();
 
@@ -157,7 +165,10 @@ subdirs = getFileList (dir);
 // print initial info
 print(nondataprefix, "Main folder:", File.getName(dir));
 print(nondataprefix, "Start time:", fetchTimeStamp(time_printing) );
-print("****", clusterName, correlName, gridSize, winDisplacement);
+print("****", clusterName, correlName, radius, minAreaPerc);
+
+
+//////////////////////////// RUN THROUGH FILES ////////////////////////////
 
 
 // loop through individual conditions within base data folder
@@ -191,6 +202,9 @@ for (d = 0; d < subdirs.length; d++) {
 }
 
 
+
+//////////////////////////// FINISHING ////////////////////////////
+
 // print end time and save log
 print(nondataprefix, "End time:", fetchTimeStamp(time_printing) );
 print(nondataprefix, "Total duration:", round((getTime() - start)/100)/10, "seconds");
@@ -211,9 +225,13 @@ if(isOpen("Results")){
 
 
 
-/////////////////////////////////////////////////////////
-//////////////////// MINOR FUNCTIONS ////////////////////
-/////////////////////////////////////////////////////////
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+//////////////////////////// MINOR FUNCTIONS ////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 function fetchTimeStamp(format){
 	// allows for nice formatting of datetime
@@ -229,6 +247,7 @@ function fetchTimeStamp(format){
 	if (format == file_naming)		return DateTime;
 }
 
+/////////////////////////////////////////////////////////////////////////
 
 function memoryDump(n){
 	//print("memory used prior to memory dump: " + IJ.freeMemory());
@@ -236,12 +255,55 @@ function memoryDump(n){
 	//print(nondataprefix, "memory used after " + n + "x memory dump: " + IJ.freeMemory());
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function cropEdges(x){
 	if (x > 0) {
 		makeRectangle(deconvCrop, deconvCrop, getWidth-deconvCrop*2, getHeight-deconvCrop*2);
 		run("Crop");
 	}
 }
+
+/////////////////////////////////////////////////////////////////////////
+
+function saveLog(){
+	selectWindow("Log");
+	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
+}
+
+/////////////////////////////////////////////////////////////////////////
+//////////////////////////// FUNCTIONAL FUNCTIONS ///////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+function getRegions(){
+	roiManager("select", 0);
+	setThreshold(1, 255);
+	run("Analyze Particles...", "clear add");
+	roiManager("Show None");
+	resetMinAndMax;
+	
+	for (i = 0; i < roiManager("count"); i++) {
+		roiManager("select", i);
+		getSelectionBounds(x, y, width, height);
+		makeOval(x-radius, y-radius, 2*radius+1, 2*radius+1);
+		roiManager("update");
+	}
+	if (mask != ""){
+		selectWindow(mask);
+		nInitialRois = RoiManager.size;
+		for (i = 0; i < nInitialRois; i++) {
+			roiManager("select",  nInitialRois - 1 - i);
+			
+			getStatistics(area, mean, min, max, std, histogram);
+			if (mean < 255 * minAreaPerc / 100){
+				roiManager("delete");
+			}
+		}
+	}
+	//waitForUser("Finished getRegions");
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 function doLocalBgCorrection(){
 
@@ -261,13 +323,9 @@ function doLocalBgCorrection(){
 	return corrected_signal;
 }
 
-function saveLog(){
-	selectWindow("Log");
-	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
-}
+/////////////////////////////////////////////////////////////////////////
 
 function import_defaults(){ 
-	
 	// set pre-defaults for first time
 	defaults = newArray();
 	defaults[0] = "_" 				;//dir 				= Dialog.getString();
@@ -278,8 +336,8 @@ function import_defaults(){
 	defaults[5] = 3 				;//correlChanel 	= Dialog.getNumber();
 	defaults[6] = "Intensity" 		;//correlName 		= Dialog.getString();
 	defaults[7] = 1 				;//dnaChannel 		= Dialog.getNumber();
-	defaults[8] = 16 				;//gridSize 		= Dialog.getNumber();
-	defaults[9] = 2 				;//winDisplacement	= Dialog.getNumber();
+	defaults[8] = 12 				;//radius 			= Dialog.getNumber();
+	defaults[9] = 2 				;//minAreaPerc		= Dialog.getNumber();
 	defaults[10] = 250 				;//prominence 		= Dialog.getNumber();
 	defaults[11] = 0 				;//excludeRegions	= Dialog.getCheckbox();
 	defaults[12] = 0 				;//preloadRegions	= Dialog.getCheckbox();
@@ -290,7 +348,6 @@ function import_defaults(){
 	defaults[17] = 0 				;//deconvCrop		= Dialog.getNumber();
 
 	// import previous defaults if they exist
-	
 	if (File.exists(defaults_file)) {
 		def_str = File.openAsString(defaults_file);
 		imp_def = split(def_str, ",");
@@ -318,6 +375,8 @@ function import_defaults(){
 	return defaults;
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function export_defaults(){
 	defaults = newArray();
 	defaults[0] = dir;
@@ -328,8 +387,8 @@ function export_defaults(){
 	defaults[5] = correlChanel;
 	defaults[6] = correlName;
 	defaults[7] = dnaChannel;
-	defaults[8] = gridSize;
-	defaults[9] = winDisplacement;
+	defaults[8] = radius;
+	defaults[9] = minAreaPerc;
 	defaults[10] = prominence;
 	defaults[11] = excludeRegions;
 	defaults[12] = preloadRegions;
@@ -356,6 +415,8 @@ function export_defaults(){
 
 	return defaults;
 }
+
+/////////////////////////////////////////////////////////////////////////
 
 function test_1(){
 	selectImage(ori);
@@ -387,6 +448,8 @@ function test_1(){
 	run("Remove Overlay");
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 function test_2(){
 	run("Tile");
 	for (i = 1; i <= nImages; i++) {
@@ -406,10 +469,9 @@ function test_2(){
 	roiManager("delete");
 }
 
-////////////////////////////////////////////////////////
-//////////////////// MAIN FUNCTIONS ////////////////////
-////////////////////////////////////////////////////////
-
+/////////////////////////////////////////////////////////////////////////
+///////////////////////////// MAIN FUNCTIONS ////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
 function clusterQuantification(){
 
@@ -424,34 +486,38 @@ function clusterQuantification(){
 
 	// run sequential steps:
 		// step 1: get DAPI outline
-		makeMask();
+		mask = makeMask();
+		//waitForUser("finished step 1: DAPI outline");
 		// step 2: exclude regions
 		if (excludeRegions) 	setExcludeRegions();
 		else roiManager("save", ROIfile);
+		//waitForUser("finished step 2: exclude regions");
 		// step 3: make grid
-		makeGrid();
+		//makeGrid();
 		// step 4: make measurements
 		before = getTime();
 		allData = measureClustering();
 		duration = round((getTime() - before)/100)/10;
+		//waitForUser("finished step 4: make measurements");
 		
 	// retrieve separate arrays from allData
 	clusterList = Array.slice(allData, 0, allData.length/2);
 	intensList	= Array.slice(allData, allData.length/2, allData.length);
 
 	// print info
-	print("**", ori);
-	Array.print(clusterList);
-	Array.print(intensList);
+	//print("**", ori);
+	//Array.print(clusterList);
+	//Array.print(intensList);
 	//print(nondataprefix, "duration:", duration, "sec");
 	
 	saveLog();
 }
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 1
 function makeMask(){
-	// load old ROIs of 
+	mask = "";
+	// load old ROIs
 	if (File.isDirectory(oldMaskRoiDir)){
 		roiManager("reset");
 		oldROIfile = oldMaskRoiDir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
@@ -496,7 +562,6 @@ function makeMask(){
 
 		if (settingsTester)	test_1();
 		
-		close(mask);
 	}
 	
 	else if (dnaChannel < 0){ // manual selection of analysis region
@@ -541,7 +606,6 @@ function makeMask(){
 		getSelectionBounds(_x_, _y_, _, _);
 		doWand(_x_, _y_);
 		roiManager("update");
-		close(mask);
 	}
 	
 	else { //no mask
@@ -552,13 +616,14 @@ function makeMask(){
 	// save ROI file
 	selectImage(ori);
 	roiManager("select", 0);
-	roiManager("rename", "Analysis region");
+	roiManager("rename", "Analysis_Region");
+
+	return mask;
 }
 
-
+/////////////////////////////////////////////////////////////////////////
 // step 2
 function setExcludeRegions(){
-	
 	// load existing ROI files if they exist
 	oldROI_file = preload_ROIdir + File.getName(subdirname) + "_ROIs" + File.separator + ori + ".zip";
 	if (preloadRegions && File.exists(oldROI_file) ){
@@ -581,75 +646,36 @@ function setExcludeRegions(){
 		roiManager("update");
 		run("Select None");
 		waitForUser("Select regions to exclude.\nAdd each region to ROI manager using Ctrl+t.");
+		roiManager("deselect");
+		roiManager("combine"); // apparently this overwrites the original. will re-add below
 		roiManager("select", 0);
 		run("Make Inverse");
 		roiManager("update");
 		
 		// rename ROIs and save
-		for (roi = 1; roi < roiManager("count"); roi++) {
+		selectImage(mask);
+		run("Analyze Particles...", "add");	// re-add region of DAPI outline
+		roiManager("select", roiManager("count")-1)
+		roiManager("rename", "DAPI_Region");
+		for (roi = 1; roi < roiManager("count")-1; roi++) {
 			roiManager("select", roi);
 			roiManager("rename", "Exclude_Region_"+roi);
-		}
+			fill();
+		}		
+		roiManager("deselect");
 		roiManager("save", ROIfile);
 	}
 }
 
-
-// step 3
-function makeGrid() {
-
-	// make cell mask image and exlude MTOCs (only black region will be read)
-	selectImage(ori);
-	newImage("newMask", "8-bit", getWidth, getHeight, 1);	// creates white image
-	mask = getTitle();
-	roiManager("select", 0);
-	run("Invert");				// makes cell/nuclear outline black
-	roiManager("delete");
-	roiManager("fill");			// makes exclude regions white
-	roiManager("reset");
-
-	// make grid around mask (used to center windows around mask area)	//######## not sure what i meant by this comment, but it works...
-	W_offset = (getWidth()  % winDisplacement) / 2;
-	H_offset = (getHeight() % winDisplacement) / 2;
-
-	for (x = W_offset; x < getWidth()-W_offset; x+=winDisplacement) {
-		for (y = H_offset; y < getHeight()-H_offset; y+=winDisplacement) {
-			makeRectangle(x, y, gridSize, gridSize);
-			getStatistics(area, mean);
-			if (mean == 0 && area == gridSize*gridSize)		roiManager("add");	// only add regions that are completely contained in mask (and within image borders)
-		}
-	}
-	close(mask);
-
-	selectImage(ori);
-	run("Select None");
-	roiManager("Remove Channel Info");
-	roiManager("Show All without labels");
-}
-
-
+/////////////////////////////////////////////////////////////////////////
 // step 4
 function measureClustering(){
-
-	// find kinetochores
-	selectImage(ori);
-	resetMinAndMax;
-	setSlice(clusterChannel);
-	run("Find Maxima...", "prominence=" + prominence + " strict exclude output=[Single Points]");
-	run("Divide...", "value=255");
-	setMinAndMax(0, 1);
-	roiManager("Show All without labels");
-
-	saveAs("Tiff", subout + ori + "_Maxima.tif");
-	spotIM = getTitle();
-	run("Tile");
-
 	// get global bg
 	globalBG = 1;	// for no background correction
 	if (bgMeth == background_methods[1]) {	// global bg correction
 		selectImage(ori);
 		setSlice(correlChanel);
-		roiManager("combine");
+		roiManager("select", 0);
 		_ = 0;
 		while (getTitle() != ori) {
 			selectImage(ori);
@@ -661,37 +687,31 @@ function measureClustering(){
 		globalBG = getValue("Median");
 	}
 
+	// find kinetochores
+	selectImage(ori);
+	resetMinAndMax;
+	setSlice(clusterChannel);
+	run("Find Maxima...", "prominence=" + prominence + " strict exclude output=[Single Points]");
+	run("Divide...", "value=255");
+	setMinAndMax(0, 1);
+	roiManager("Show All without labels");
+	spots_im = getTitle();
+
+	getRegions();
+	close(mask);
+
+	setMinAndMax(0,0);
+	run("Select None");
+	roiManager("Show All without labels");
+	saveAs("Tiff", subout + ori + "_Maxima.tif");
+	spotIM = getTitle();
+	run("Tile");
+
 	// count number of CEN spots
 	Spots = newArray();
 	Intensities = newArray();
 	
 	if (settingsTester)	test_2();
-
-	selectImage(spotIM);
-	for (roi = 0; roi < roiManager("count"); roi++) {
-		// troubleshooting below, because for some reason sometimes it makes the measurement in the wrong image
-		_i = 0;
-		check = 15;
-		while ( getTitle() == ori ){
-			selectImage(spotIM);
-			_i ++;
-			if (_i % check == 0)	waitForUser("##### ERROR 1:" + 15 + "cycles have passed and still wrong image selected");
-		}
-		// troubleshooting over
-		
-		roiManager("select",roi);
-		
-		// 2nd troubleshooting
-		if (getTitle() == ori){
-			//waitForUser("##### ERROR 2: wrong IM picked up after ROI selection");
-			Spots[roi] = "nan";
-		}
-		// troubleshooting over
-		else {
-			Spots[roi] = getValue("IntDen");
-		}
-		
-	}
 
 	// Measure correlation (separate loop from above saves a lot of time!)
 	selectImage(ori);
@@ -703,9 +723,23 @@ function measureClustering(){
 		if (bgMeth == background_methods[2])	Intensities[roi] = doLocalBgCorrection();	// local bg correction
 		else									Intensities[roi] = rawMean - globalBG; 		// global BG
 	}
+	close(ori);
+
+	selectImage(spotIM);
+	for (roi = 0; roi < roiManager("count"); roi++) {
+		roiManager("select",roi);
+		Spots[roi] = getValue("IntDen");
+	}
 
 	run("Select None");
+
+	// print results
+	print("**", ori);
+	Array.print(Spots);
+	Array.print(Intensities);
+	//waitForUser("test");
 
 	data = Array.concat(Spots,Intensities);
 	return data;
 }
+

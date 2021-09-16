@@ -19,24 +19,6 @@ from tkinter import filedialog as fd
 
 
 
-# open file dialog
-print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
-top = tk.Tk()
-
-csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
-                                                   filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
-top.withdraw()
-csvInputFile = os.path.basename(csvInputPath)
-dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
-
-#dataDir = r'.\data\testData\_LabMeeting'
-#PythonInput_version = -1
-#csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
-
-
-expName = os.path.basename(dataDir)
-timestamp = csvInputFile[-14:-4]
-outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
@@ -44,6 +26,7 @@ makeHisto       = 0 # create histogram of spot data
 makeLineplot    = 0 # create a correlation graph between spots and intensities
 makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
 exportStats     = 0 # output CSVs for further processing
+makePrismOutput = True # output data that can easily be copied to Prism
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -55,7 +38,6 @@ max_histo_bars = 50
 Cond = 'Condition'
 Image = 'Cell'
 Freq = 'Frequency'
-Freq_noZeroes = 'Frequency_'
 Count = 'Count'
 
 
@@ -79,16 +61,6 @@ def make_histdf(df):
                      .rename(Freq)
                      .reset_index() )
     output_df[Freq] = df2[Freq]
-    
-    # Get 0-free frequencies
-    with pd.option_context('mode.chained_assignment',None):
-        output_df[Freq_noZeroes] = output_df[Count]
-        zeroes = output_df[spotName] == 0
-        output_df[Freq_noZeroes][zeroes] = np.nan
-        
-        sum_df = output_df.groupby([Cond])[Freq_noZeroes].sum().reset_index()
-        for i,f in enumerate(output_df[Freq_noZeroes]):
-            output_df[Freq_noZeroes][i] = f / sum_df[Freq_noZeroes][sum_df[Cond] == output_df[Cond][i]]
 
     
     if MaxLength_CondName:
@@ -179,8 +151,27 @@ def getCI(df, ci=95):
 
 #%% READ AND ORDER DATA
 if readData:
-    print ('reading input data')
+    # open file dialog
+    print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
+    top = tk.Tk()
     
+    csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
+                                                       filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
+    top.withdraw()
+    csvInputFile = os.path.basename(csvInputPath)
+    dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
+    
+    #dataDir = r'.\data\testData\_LabMeeting'
+    #PythonInput_version = -1
+    #csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
+    
+    
+    expName = os.path.basename(dataDir)
+    timestamp = csvInputFile[-14:-4]
+    outputDir = os.path.join(dataDir, 'Results_' + timestamp)
+
+
+    print ('reading input data')  
     with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
         lines = [x.strip(',\n') for x in myfile.readlines() if not x.startswith('#')]
 
@@ -189,10 +180,10 @@ if readData:
         if l.startswith('****'):
             spotName    = l.split(' ')[1]
             yAxisName   = l.split(' ')[2]
-            windowSize  = l.split(' ')[3]
-            winDisplace = l.split(' ')[4].strip()
+            radius  = l.split(' ')[3]
+            areaPercent = l.split(' ')[4].strip()
             full_df = pd.DataFrame()
-            outputDir = outputDir + f'_size{windowSize}_displ{winDisplace}'
+            outputDir = outputDir + f'_radius{radius}_Afract{areaPercent}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
 
@@ -235,30 +226,27 @@ if makeHisto:
     histogram_df = make_histdf(full_df)
     save_csv(histogram_df, 'Histogram')
     
-    y_data = [Freq,Freq_noZeroes]
+    too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
+    too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
+    # generate plot
+    if too_many_conditions or too_many_bars:
+        sns.lineplot(x=spotName, y=Freq, hue=Cond, data=histogram_df)
+    else:
+        sns.barplot (x=spotName, y=Freq, hue=Cond, data=histogram_df)
     
-    for x in range(2):
-        too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
-        too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
-        # generate plot
-        if too_many_conditions or too_many_bars:
-            sns.lineplot(x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
-        else:
-            sns.barplot (x=spotName, y=y_data[x], hue=Cond, data=histogram_df)
+    # plot formatting
+    plt.legend(loc = 1, prop={'size': 12})
+    plt.title(f'{spotName} in cluster (radius: {radius} pixels)')
+    plt.ylabel(Freq)
+    plt.grid(axis='y', lw = 0.5)
+    # save plot
+    figurePath = os.path.join(outputDir, 'Histogram.png')
+    plt.savefig(figurePath, dpi=600)
+    plt.clf()
         
-        # plot formatting
-        plt.legend(loc = 1, prop={'size': 12})
-        plt.title(f'{spotName} per {windowSize}x{windowSize} square (displ: {winDisplace})')
-#        plt.xlabel(spotName)
-        plt.ylabel(Freq)
-        plt.grid(axis='y', lw = 0.5)
-        if x == 1:
-            plt.xlim(left=0.5)
-        # save plot
-        figurePath = os.path.join(outputDir, f'Histogram_{x}-based.png')
-        plt.savefig(figurePath, dpi=600)
-    #    plt.show()
-        plt.clf()
+        
+    # make scatterplot
+        
 
 
 #%% MAKE COORELATION GRAPHS
@@ -358,22 +346,107 @@ if exportStats:
     print ('exporting stats as csv files')
     
     # get clustering stats per condition
-    full_noZero = full_df[full_df[spotName] != 0]
     stats_1 =  getStats(full_df, Cond, spotName)
-    stats_1b = getStats(full_noZero, Cond, spotName)
-    stats_1b[Cond] = stats_1[Cond].astype(str) + '_exc0' 
-    save_csv(stats_1.append(stats_1b), f'{spotName}_stats')
-
+    save_csv(stats_1, f'{spotName}_stats')
+    
     # get signal stats per condition / count
     stats_2 = getStats(full_df, [Cond,spotName], yAxisName)    
     stats_2[Freq] = histogram_df[Freq]
-    stats_2[Freq_noZeroes] = histogram_df[Freq_noZeroes]
-    save_csv(stats_2, f'{yAxisName}_stats_summary')
-
-    # get signal stats per imagge / count
+    save_csv(stats_2, f'{yAxisName}_stats_per_condition')
+    
+    # get signal stats per image / count
     stats_3 = getStats(full_df, [Cond,Image,spotName], yAxisName)
     save_csv(stats_3, f'{yAxisName}_stats_per_image')
     
+
+
+#%%
+
+if makePrismOutput:
+    print ('generating files for Prism')
+    
+    def prism_output(filename, headers, data):
+        if filename.endswith('.csv'):
+            filename = filename[:-4]
+        
+        file = os.path.join(outputDir, filename + '.csv')
+        with open(file, 'w') as f:
+            f.write(','.join(headers))
+            f.write('\n')
+            
+            for x in range(len(data[0])):
+                line = [data[i][x] for i in range(len(data)) ]
+
+                if x>0 and line[0] != data[0][x-1]:
+                    f.write('\n')
+                
+                f.write(','.join(map(str, line)))
+                f.write('\n')
+    
+    
+    # scatterplot (swarmplot), using full_df
+    prism_type = 'scatterplot'
+    headers = [Image, *full_df[Cond].unique()]
+    data = [list(full_df[Image])]
+    for c in headers[1:]:
+        col = [x if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
+        data.append(col)
+#    prism_output(prism_type, headers, data)
+    
+    
+    # scatterplot (swarmplot) with noise, using full_df
+    prism_type = 'scatterplot'
+    headers = [Image, *full_df[Cond].unique()]
+    data = [list(full_df[Image])]
+    max_noise = 0.2
+    for c in headers[1:]:
+        r = np.random.uniform(low = -max_noise, high = max_noise, size = len(full_df[spotName]))
+        col = [x+r[i] if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
+        data.append(col)
+#    prism_output(prism_type, headers, data)
+    
+    
+    # Line graph per condition, using stats2
+    prism_type = 'XY_per_condition'
+    Conds = [cond for cond in stats_2[Cond].unique()]
+    
+    headers = ['',spotName]
+    data = [['']*len(stats_2), list(stats_2[spotName]) ]
+    
+    for c in Conds:
+        headers = headers + [c]*3
+
+        mean =   [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['Mean']) ]
+        stdev =  [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['StDev']) ]
+        counts = [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['Count']) ]
+        data.append(mean)
+        data.append(stdev)
+        data.append(counts)
+    
+#    prism_output(prism_type, headers, data)
+    
+    
+    # Line graph per image, using stats3
+    prism_type = 'XY_per_image'
+    Conds = [cond for cond in stats_3[Cond].unique()]
+    IMs =   [im for im in stats_3[Image].unique()]
+
+    headers = ['',spotName]
+    data = [list(stats_3[Image]), list(stats_3[spotName]) ]
+    
+    for c in Conds:
+        for im in stats_3[stats_3[Cond] == c][Image].unique():
+            ims = [f'{c} - {im}']
+            headers = headers + [ele for ele in ims for i in range(3)]
+        
+            mean =   [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Mean']) ]
+            stdev =  [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['StDev']) ]
+            counts = [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Count']) ]
+            data.append(mean)
+            data.append(stdev)
+            data.append(counts)
+    
+    prism_output(prism_type, headers, data)
 
 print('')
 #print('(if you got a FutureWarning, try updating pandas)')

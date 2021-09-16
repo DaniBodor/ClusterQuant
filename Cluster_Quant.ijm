@@ -728,7 +728,7 @@ function measureClustering(){
 	selectImage(spotIM);
 	for (roi = 0; roi < roiManager("count"); roi++) {
 		roiManager("select",roi);
-		Spots[roi] = getValue("IntDen")-1;
+		Spots[roi] = getValue("IntDen");
 	}
 
 	run("Select None");

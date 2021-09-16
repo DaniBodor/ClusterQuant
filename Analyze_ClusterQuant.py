@@ -181,7 +181,7 @@ if readData:
             radius  = l.split(' ')[3]
             areaPercent = l.split(' ')[4].strip()
             full_df = pd.DataFrame()
-            outputDir = outputDir + f'_size{radius}_areaperc{areaPercent}'
+            outputDir = outputDir + f'_radius{radius}_Afract{areaPercent}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
 
@@ -226,7 +226,7 @@ if makeHisto:
     
     # plot formatting
     plt.legend(loc = 1, prop={'size': 12})
-    plt.title(f'Other {spotName} within {radius} pixels distance')
+    plt.title(f'{spotName} in cluster (radius: {radius} pixels)')
     plt.ylabel(Freq)
     plt.grid(axis='y', lw = 0.5)
     # save plot

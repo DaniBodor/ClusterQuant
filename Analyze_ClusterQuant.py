@@ -351,6 +351,55 @@ if exportStats:
     save_csv(stats_3, f'{yAxisName}_stats_per_image')
     
 
+
+#%%
+
+if makePrismOutput:
+    print ('generating files for Prism')
+    
+    def prism_output(filename, headers, data):
+        if filename.endswith('.csv'):
+            filename = filename[:-4]
+        
+        file = os.path.join(outputDir, filename + '.csv')
+        with open(file, 'w') as f:
+            f.write(','.join(headers))
+            f.write('\n')
+            
+            for x in range(len(data[0])):
+                line = [data[i][x] for i in range(len(data)) ]
+
+                if x>0 and line[0] != data[0][x-1]:
+                    f.write('\n')
+                
+                f.write(','.join(map(str, line)))
+                f.write('\n')
+    
+    
+    # scatterplot (swarmplot), using full_df
+    prism_type = 'scatterplot'
+    headers = [Image, *full_df[Cond].unique()]
+    data = [list(full_df[Image])]
+    for c in headers[1:]:
+        col = [x if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
+        data.append(col)
+    prism_output(prism_type, headers, data)
+    
+    
+    # scatterplot (swarmplot) with noise, using full_df
+    prism_type = 'scatterplot'
+    headers = [Image, *full_df[Cond].unique()]
+    data = [list(full_df[Image])]
+    max_noise = 0.2
+    for c in headers[1:]:
+        r = np.random.uniform(low = -max_noise, high = max_noise, size = len(full_df[spotName]))
+        col = [x+r[i] if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
+        data.append(col)
+    prism_output(prism_type, headers, data)
+    
+  
+
+
 print('')
 print('(if you got a FutureWarning, try updating pandas)')
 print('all done!')

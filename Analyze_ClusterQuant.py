@@ -19,31 +19,14 @@ from tkinter import filedialog as fd
 
 
 
-# open file dialog
-print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
-top = tk.Tk()
-
-csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
-                                                   filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
-top.withdraw()
-csvInputFile = os.path.basename(csvInputPath)
-dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
-
-#dataDir = r'.\data\testData\_LabMeeting'
-#PythonInput_version = -1
-#csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
-
-
-expName = os.path.basename(dataDir)
-timestamp = csvInputFile[-14:-4]
-outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 starttime = datetime.now()
 
-readData        = True # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = True # create histogram of spot data
-makeLineplot    = True # create a correlation graph between spots and intensities
-makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
-exportStats     = True # output CSVs for further processing
+readData        = 0 # reads data from file; set to False to save time when re-analyzing previous
+makeHisto       = 0 # create histogram of spot data
+makeLineplot    = 0 # create a correlation graph between spots and intensities
+makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
+exportStats     = 0 # output CSVs for further processing
+makePrismOutput = True # output data that can easily be copied to Prism
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -168,8 +151,27 @@ def getCI(df, ci=95):
 
 #%% READ AND ORDER DATA
 if readData:
-    print ('reading input data')
+    # open file dialog
+    print('find file open window (it might be behind other windows) and select the _PythonInput file you want to analyze.')
+    top = tk.Tk()
     
+    csvInputPath = os.path.abspath( fd.askopenfilename(title = 'Select _PythonInput file for analysis', 
+                                                       filetypes = (("CSVs","*.csv"),("All files","*.*")) ))
+    top.withdraw()
+    csvInputFile = os.path.basename(csvInputPath)
+    dataDir = os.path.abspath(os.path.join(csvInputPath, os.pardir))
+    
+    #dataDir = r'.\data\testData\_LabMeeting'
+    #PythonInput_version = -1
+    #csvInputFile = [f for f in os.listdir(dataDir) if '_Python' in f][PythonInput_version]
+    
+    
+    expName = os.path.basename(dataDir)
+    timestamp = csvInputFile[-14:-4]
+    outputDir = os.path.join(dataDir, 'Results_' + timestamp)
+
+
+    print ('reading input data')  
     with open (os.path.join(dataDir,csvInputFile), "r") as myfile:
         lines = [x.strip(',\n') for x in myfile.readlines() if not x.startswith('#')]
 

@@ -419,6 +419,18 @@ if makePrismOutput:
     prism_output(prism_type, headers, data)
     
     
+    # Line graph per image, using stats3
+    prism_type = 'XY_per_image'
+    Conds = [cond for cond in stats_3[Cond].unique()]
+
+    headers = ['',spotName]
+    for c in Conds:
+        ims = [f'{c} - {im}' for im in stats_3[stats_3[Cond] == c][Image].unique() ]
+        ims = [ele for ele in ims for i in range(3)]
+        headers = headers + ims
+
+    data = [list(stats_2[Image]), list(stats_2[spotName]) ]
+
 
 print('')
 print('(if you got a FutureWarning, try updating pandas)')

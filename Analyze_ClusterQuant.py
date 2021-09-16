@@ -399,16 +399,15 @@ if makePrismOutput:
     
     
     # Line graph per condition, using stats2
-    prism_type = 'XY_summary'
+    prism_type = 'XY_per_condition'
     Conds = [cond for cond in stats_2[Cond].unique()]
     
     headers = ['',spotName]
+    data = [['']*len(stats_2), list(stats_2[spotName]) ]
+    
     for c in Conds:
         headers = headers + [c]*3
-#        headers = headers + ims
-    
-    data = [['']*len(stats_2), list(stats_2[spotName]) ]
-    for c in Conds:
+
         mean =   [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['Mean']) ]
         stdev =  [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['StDev']) ]
         counts = [x if stats_2[Cond][i] == c else '' for i, x in enumerate(stats_2['Count']) ]

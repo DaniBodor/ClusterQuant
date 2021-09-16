@@ -415,21 +415,30 @@ if makePrismOutput:
         data.append(stdev)
         data.append(counts)
     
-    prism_output(prism_type, headers, data)
+#    prism_output(prism_type, headers, data)
     
     
     # Line graph per image, using stats3
     prism_type = 'XY_per_image'
     Conds = [cond for cond in stats_3[Cond].unique()]
+    IMs =   [im for im in stats_3[Image].unique()]
 
     headers = ['',spotName]
+    data = [list(stats_3[Image]), list(stats_3[spotName]) ]
+    
     for c in Conds:
-        ims = [f'{c} - {im}' for im in stats_3[stats_3[Cond] == c][Image].unique() ]
-        ims = [ele for ele in ims for i in range(3)]
-        headers = headers + ims
-
-    data = [list(stats_2[Image]), list(stats_2[spotName]) ]
-
+        for im in stats_3[stats_3[Cond] == c][Image].unique():
+            ims = [f'{c} - {im}']
+            headers = headers + [ele for ele in ims for i in range(3)]
+        
+            mean =   [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Mean']) ]
+            stdev =  [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['StDev']) ]
+            counts = [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Count']) ]
+            data.append(mean)
+            data.append(stdev)
+            data.append(counts)
+    
+    prism_output(prism_type, headers, data)
 
 print('')
 print('(if you got a FutureWarning, try updating pandas)')

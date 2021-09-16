@@ -344,9 +344,9 @@ if exportStats:
     # get signal stats per condition / count
     stats_2 = getStats(full_df, [Cond,spotName], yAxisName)    
     stats_2[Freq] = histogram_df[Freq]
-    save_csv(stats_2, f'{yAxisName}_stats_summary')
+    save_csv(stats_2, f'{yAxisName}_stats_per_condition')
     
-    # get signal stats per imagge / count
+    # get signal stats per image / count
     stats_3 = getStats(full_df, [Cond,Image,spotName], yAxisName)
     save_csv(stats_3, f'{yAxisName}_stats_per_image')
     

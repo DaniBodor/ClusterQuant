@@ -80,7 +80,7 @@ Dialog.createNonBlocking("ClusterQuant settings");
 Dialog.show();	// retrieve input
 	// input/output
 	dir = Dialog.getString();
-	if (!endsWith(dir, File.separator)	dir = dir + File.separator;
+	if (!endsWith(dir, File.separator))	dir = dir + File.separator;
 	expName = Dialog.getString();
 	expName = replace(expName, " ", "_");
 	imageIdentifier = Dialog.getString();

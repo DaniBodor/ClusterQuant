@@ -382,26 +382,44 @@ if makePrismOutput:
                 f.write('\n')
     
     
-    # scatterplot (swarmplot), using full_df
-    prism_type = f'scatterplot_per_{spotName}'
-    headers = [Image, *full_df[Cond].unique()]
-    data = [list(full_df[Image])]
-    for c in headers[1:]:
-        col = [x if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
-        data.append(col)
-    prism_output(prism_type, headers, data)
-    
-    
-    # scatterplot (swarmplot) with noise, using full_df
-    prism_type = f'scatterplot_noisy_per_{spotName}'
-    headers = [Image, *full_df[Cond].unique()]
-    data = [list(full_df[Image])]
-    max_noise = 0.2
-    for c in headers[1:]:
-        r = np.random.uniform(low = -max_noise, high = max_noise, size = len(full_df[spotName]))
-        col = [x+r[i] if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
-        data.append(col)
-    prism_output(prism_type, headers, data)
+    # scatterplots (swarmplots) per spot, using full_df
+    scatter_type = [spotName, spotName + '_noisy', Image]
+  
+    for n, prism_type in enumerate(scatter_type):
+        prism_name = f'Scatterplot_per_{prism_type}'
+        
+        headers = [Image, *full_df[Cond].unique()]
+        max_noise = 0.2
+
+        scatter_input = full_df.copy()
+        if 'nois' in prism_type:
+            scatter_input[spotName] += np.random.uniform(low = -max_noise, high = max_noise, size = len(scatter_input))             
+        elif n == 2:
+            scatter_input = pd.DataFrame({spotName : full_df.groupby([Cond,Image])[spotName].mean()}).reset_index()
+        
+        data = [list(scatter_input[Image])]
+        
+        for c in headers[1:]:
+#            if 'nois' in prism_type:
+#                r = np.random.uniform(low = -max_noise, high = max_noise, size = len(scatter_input))
+#            else:
+#                r = [0] * len(scatter_input)
+            col = [x if scatter_input[Cond][i] == c else '' for i, x in enumerate(scatter_input[spotName]) ]
+            data.append(col)
+        prism_output(prism_name, headers, data)
+        
+        
+        # make swarmplots
+#        sns.boxplot (data=scatter_input, x = Cond, y = spotName, showfliers=False)
+        sns.swarmplot (data=scatter_input, x = Cond, y = spotName) #, color = 'black')#, alpha = 0.5)
+        
+        # plot formatting
+        plt.title(prism_name)
+        plt.ylim(bottom = -0.5)
+        # save plot
+        figurePath = os.path.join(outputDir, prism_name + '.png')
+        plt.savefig(figurePath, dpi=600)
+        plt.clf()
     
     
     # Line graph per condition, using stats2

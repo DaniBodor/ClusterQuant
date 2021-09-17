@@ -415,7 +415,8 @@ if makePrismOutput:
         
         # plot formatting
         plt.title(prism_name)
-        plt.ylim(bottom = -0.5)
+        y_min = plt.ylim()[0]
+        plt.ylim(bottom = min(y_min,0))
         # save plot
         figurePath = os.path.join(outputDir, prism_name + '.png')
         plt.savefig(figurePath, dpi=600)

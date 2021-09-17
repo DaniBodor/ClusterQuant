@@ -22,10 +22,10 @@ from tkinter import filedialog as fd
 starttime = datetime.now()
 
 readData        = True # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = 0 # create histogram of spot data
-makeLineplot    = 0 # create a correlation graph between spots and intensities
-makeViolinplots = 0 # make a violinplot for each cell showing intensity by spot count
-exportStats     = 0 # output CSVs for further processing
+makeHisto       = True # create histogram of spot data
+makeLineplot    = True # create a correlation graph between spots and intensities
+makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
+exportStats     = True # output CSVs for further processing
 makePrismOutput = True # output data that can easily be copied to Prism
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
@@ -245,7 +245,8 @@ if makeHisto:
     plt.clf()
         
         
-    # make scatterplot
+    # make swarmplot
+    
         
 
 
@@ -385,17 +386,17 @@ if makePrismOutput:
     
     
     # scatterplot (swarmplot), using full_df
-    prism_type = 'scatterplot'
+    prism_type = f'scatterplot_per_{spotName}'
     headers = [Image, *full_df[Cond].unique()]
     data = [list(full_df[Image])]
     for c in headers[1:]:
         col = [x if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
         data.append(col)
-#    prism_output(prism_type, headers, data)
+    prism_output(prism_type, headers, data)
     
     
     # scatterplot (swarmplot) with noise, using full_df
-    prism_type = 'scatterplot'
+    prism_type = f'scatterplot_noisy_per_{spotName}'
     headers = [Image, *full_df[Cond].unique()]
     data = [list(full_df[Image])]
     max_noise = 0.2
@@ -403,11 +404,11 @@ if makePrismOutput:
         r = np.random.uniform(low = -max_noise, high = max_noise, size = len(full_df[spotName]))
         col = [x+r[i] if full_df[Cond][i] == c else '' for i, x in enumerate(full_df[spotName]) ]
         data.append(col)
-#    prism_output(prism_type, headers, data)
+    prism_output(prism_type, headers, data)
     
     
     # Line graph per condition, using stats2
-    prism_type = 'XY_per_condition'
+    prism_type = f'XY_per_{Cond}'
     Conds = [cond for cond in stats_2[Cond].unique()]
     
     headers = ['',spotName]
@@ -423,11 +424,11 @@ if makePrismOutput:
         data.append(stdev)
         data.append(counts)
     
-#    prism_output(prism_type, headers, data)
+    prism_output(prism_type, headers, data)
     
     
     # Line graph per image, using stats3
-    prism_type = 'XY_per_image'
+    prism_type = f'XY_per_{Image}'
     Conds = [cond for cond in stats_3[Cond].unique()]
     IMs =   [im for im in stats_3[Image].unique()]
 

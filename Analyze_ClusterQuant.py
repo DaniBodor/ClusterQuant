@@ -215,7 +215,7 @@ if readData:
     full_df = full_df            [[Cond, Image, spotName, yAxisName]]   # reorder columns
     full_df = full_df.sort_values([Cond, Image, spotName, yAxisName])   # sort from left to right
     full_df.reset_index(drop=True, inplace=True)
-    save_csv(full_df, 'Raw_data')
+    save_csv(full_df, 'Data_Raw')
 
 #%% MAKE HISTOGRAM
 
@@ -224,7 +224,7 @@ if makeHisto:
 
     # make and export histogram
     histogram_df = make_histdf(full_df)
-    save_csv(histogram_df, 'Histogram')
+    save_csv(histogram_df, 'Data_Histogram')
     
     too_many_conditions = histo_bar_vs_line_cutoff  <   len(full_df[Cond].unique())
     too_many_bars       = max_histo_bars            <   len(full_df[Cond].unique()) * full_df[spotName].max()
@@ -244,9 +244,6 @@ if makeHisto:
     plt.savefig(figurePath, dpi=600)
     plt.clf()
         
-        
-    # make swarmplot
-    
         
 
 
@@ -348,16 +345,16 @@ if exportStats:
     
     # get clustering stats per condition
     stats_1 =  getStats(full_df, Cond, spotName)
-    save_csv(stats_1, f'{spotName}_stats')
+    save_csv(stats_1, f'Stats_{spotName}')
     
     # get signal stats per condition / count
     stats_2 = getStats(full_df, [Cond,spotName], yAxisName)    
     stats_2[Freq] = histogram_df[Freq]
-    save_csv(stats_2, f'{yAxisName}_stats_per_condition')
+    save_csv(stats_2, f'Stats_{yAxisName}_per_condition')
     
     # get signal stats per image / count
     stats_3 = getStats(full_df, [Cond,Image,spotName], yAxisName)
-    save_csv(stats_3, f'{yAxisName}_stats_per_image')
+    save_csv(stats_3, f'Stats_{yAxisName}_per_image')
     
 
 
@@ -366,11 +363,11 @@ if exportStats:
 if makePrismOutput:
     print ('generating files for Prism')
     
-    def prism_output(filename, headers, data):
-        if filename.endswith('.csv'):
-            filename = filename[:-4]
+    def prism_output(outname, headers, data):
+        if outname.endswith('.csv'):
+            outname = outname[:-4]
         
-        file = os.path.join(outputDir, filename + '.csv')
+        file = os.path.join(outputDir, 'Prism_' + outname + '.csv')
         with open(file, 'w') as f:
             f.write(','.join(headers))
             f.write('\n')

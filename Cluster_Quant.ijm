@@ -637,7 +637,7 @@ function setExcludeRegions(){
 		Stack.setChannel(correlChanel);
 		run("Select None");
 		run("Set... ", "zoom=150");
-		setLocation(2000, 50);
+		//setLocation(2000, 50);
 		roiManager("Show All without labels");
 		setTool("oval");
 

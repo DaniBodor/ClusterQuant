@@ -85,7 +85,6 @@ Dialog.show();	// retrieve input
 	expName = replace(expName, " ", "_");
 	imageIdentifier = Dialog.getString();
 	imageIdentifier = imageIdentifier.toLowerCase;
-	outdir = dir + "_" + expName + File.separator;
 
 	// channel order
 	clusterChannel = 	Dialog.getNumber(); // former KTchannel
@@ -158,6 +157,7 @@ if (preloadRegions && excludeRegions)	Dialog.show();
 preload_ROIdir = Dialog.getString();
 
 // Create output directories
+outdir = dir + "_" + expName + File.separator;
 File.makeDirectory(outdir);
 roiDir = outdir + "ROIs" + starttime + File.separator;
 File.makeDirectory(roiDir);
@@ -269,7 +269,7 @@ function cropEdges(x){
 
 function saveLog(){
 	selectWindow("Log");
-	saveAs("Text", outdir + "_PythonInput" + starttime + ".csv");
+	saveAs("Text", outdir + "_PythonInput" + starttime + "_Radius" + radius + ".csv");
 }
 
 /////////////////////////////////////////////////////////////////////////

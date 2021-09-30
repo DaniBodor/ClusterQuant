@@ -174,7 +174,7 @@ if readData:
     
     
     expName = os.path.basename(dataDir)
-    timestamp = csvInputFile[-14:-4]
+    timestamp = csvInputFile[13:23]
     outputDir = os.path.join(dataDir, 'Results_' + timestamp)
 
 
@@ -190,7 +190,7 @@ if readData:
             radius  = l.split(' ')[3]
             areaPercent = l.split(' ')[4].strip()
             full_df = pd.DataFrame()
-            outputDir = outputDir + f'_radius{radius}_Afract{areaPercent}'
+            outputDir = outputDir + f'_Radius{radius}'
             if not os.path.exists(outputDir):
                 os.mkdir(outputDir)
 

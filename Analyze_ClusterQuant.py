@@ -80,6 +80,9 @@ def shorten_column_name(df,column,L):
 
 #%%
 def name_cleaner(name):
+    '''
+    this function cleans some Condition names
+    '''
     for x in cleanup:
         name = name.replace(x, '')
     while '__' in name:
@@ -93,10 +96,6 @@ def name_cleaner(name):
     
     return name
 
-#%%
-def excl_0(df):
-    df = df[df[spotName] != 0]
-    return df
 
 #%%
 def save_csv(df,name):
@@ -108,6 +107,11 @@ def save_csv(df,name):
 
 #%%
 def duplicate_singles(df):
+    '''
+    this function solves an issue in the visualization of standard deviations of correlations
+    the issue is that if a certain x value only exists once in the dataset (i.e. standard deviation=0), the standard deviations of the values surrounding are cut off
+    this function copies any entries where the count is 1 that only exist once and adds an additional row with Y-value + a tiny amount
+    '''
     cheat_df = df.copy()
     for i,x in enumerate( histogram_df[Count] ):
         if x == 1:
@@ -134,6 +138,9 @@ def getStats(df, group, data):
 
 
 def getCI(df, ci=95):
+    '''
+    this function gets the confidence intervals used in getStats above
+    '''
     ci_lo, ci_hi = [],[]
     
     for i in df.index:

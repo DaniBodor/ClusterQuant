@@ -15,7 +15,7 @@ This project measures the degree of clustering of individual spots relative to l
 #### Step 1: Input data organization
 Macro works on any projected microscopy image that can be opened in FiJi.
 Create a base directory for data analysis. Within the base directory, create separate directories for each condition to be analyzed. Within these directories, place all images to be analyzed for this condition. (Note foldernames starting with an underscore will not be read.) E.g.,  
-[[placeholder for image]]
+<img src="README_pics/DirTree.PNG">
 
 
 #### Step 2: Running ClusterQuant.ijm from FiJi (ImageJ)

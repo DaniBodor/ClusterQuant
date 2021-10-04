@@ -1,73 +1,41 @@
 # ClusterQuant
 
-Version 1.0
-
-Measure degree of clustering of individual spots relative to local signal intensity of another channel.
-
-## README under construction
-...  
-...
-
-## IGNORE BELOW
-
-## Input/Output
-
-Place any number of data folders (one folder containing multiple images) within data>raw (see Project organization below). These will be annotated separately and will result in properly formatted output graphs.
-Filenames ending with "PRJ.tif" or "PRJ.dv" (note the capitals) will be read by the code. Other files can exist within data folder without interference.
-
-Run *src>MAIN_RunOnSubfolders.ijm* and select data>raw as base directory (drag into ImageJ or FiJi and hit run). This will output a \*.txt file which is then read by the Python code.
-Next, run *src>CEN_cluster_analysis.py* from a Python compiler (doesn't work from FiJi for whatever reason).
-
-This will output three types of data:
-1) a \*.txt file with all raw data in *results>output*(see format below)
-2) a single histogram comparing number of CENs per squareby dataset in *results>figures*
-3) one lineplot per dataset showing the average +/- SD (I believe) tubulin intensity by number of centromeres per square in *results>figures*
-4) one violinplot per image showing the distribution of tubulin intensity by number of centromeres per square in *results>figures>subfolder*
-
-The \*.txt file will be organized as follows:
-```
-##### Running CenClusterQuant on [base folder]
-##### Start time: [current time]
-***[folder name]
-**[image name]
-[list of CEN counts]
-[list of tubulin intensities]
-**[image name]
-[list of CEN counts]
-[list of tubulin intensities]
-***[folder name]
-**[image name]
-[list of CEN counts]
-[list of tubulin intensities]
-etc.
-##### End time: [current time]
-##### All done
-```
+This project measures the degree of clustering of individual spots relative to local signal intensity of another channel.
 
 
-## Project organization
+# README UNDER CONSTRUCTION
 
-Used Barbara Vreede's 'good-enough-project' cookiecutter setup for project organization (cookiecutter gh:bvreede/good-enough-project)
 
-```
-.
-├── .gitignore
-├── CITATION.md
-├── LICENSE.md
-├── README.md
-├── requirements.txt
-├── data               <- All project data, ignored by git
-│   └── base           <- Place raw data here, separated into subfolders by condition (RO)
-│       ├── dataset 1  <- separate conditions to be analyzed (containing multiple images) (RO) 
-│       ├── dataset 2   
-│       ├── ...         
-│       └── dataset N   
-├── results
-│   ├── figures        <- Figures for the manuscript or reports (PG)
-│   └── output         <- Other output for the manuscript or reports (PG)
-└── src                <- Source code for this project (HW)
-    └── external       <- External code/plugins required (RO)
-```
+## Workflow
+1) Organize image data as explained below
+2) Run _Cluster_Quant.ijm_ and select base data folder
+3) Run _Analyze_ClusterQuant.py_ on the csv output file from step 2 (filename starting with _\_PythonInput_)
+
+
+#### Step 1: Input data organization
+Macro works on any projected microscopy image that can be opened in FiJi.
+Create a base directory for data analysis. Within the base directory, create separate directories for each condition to be analyzed. Within these directories, place all images to be analyzed for this condition. (Note foldernames starting with an underscore will not be read.) E.g.,  
+[[placeholder for image]]
+
+
+#### Step 2: Running ClusterQuant.ijm from FiJi (ImageJ)
+Drag _Cluster_Quant.ijm_ into FiJi and hit Run at the bottom of the script editor. This will open a dialog window with a number of options.
+
+INPUT/OUTPUT:
+- Main folder: choose base directory listed above
+- Experiment name: Names the output folder
+- Image identifier: input that must be present in all filenames to be read; any filename that does not contain. E.g. if folders contain both raw data and projected images, write the identifying part of the filename of the projected images (usually "PRJ"). This can be left empty if all files present in the folders should be analyzed.
+
+CHANNELS:
+
+
+#### Step 3: Running Analyze_ClusterQuant.py in Python
+
+
+#### Step 4: Post-processing data
+
+
+
 
 
 ## License

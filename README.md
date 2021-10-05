@@ -44,7 +44,7 @@ Drag _Cluster_Quant.ijm_ into FiJi and hit Run at the bottom of the script edito
 11) Turn on to run in test mode. The macro will stop a few times during each image to allow for manual tuning of settings. Cancel the test run and use optimal settings in extended settings
 12) Turn on to change extended settings in additional dialog  
 
-&nbsp; &nbsp; &nbsp; &nbsp; <img src="README_pics/Menu1.png">
+&nbsp; &nbsp; &nbsp; &nbsp; <img src="README_pics/Menu1.png" width="67%">
 
 
 

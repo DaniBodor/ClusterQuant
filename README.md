@@ -1,14 +1,12 @@
-# ClusterQuant
+# README UNDER CONSTRUCTION
 
-# README UNDER CONSTRUCTION
-# README UNDER CONSTRUCTION
-# README UNDER CONSTRUCTION
+# ClusterQuant
 
 
 ## Introduction
 
 This project measures the degree of clustering of individual spots relative to local signal intensity of another channel.
-_explanation of whay macro does specifically (use images to explain): recognize spots - put circles around - count other spots within circle - measure signal intensity in circle
+_explanation of whay macro does specifically (use images to explain): recognize spots - put circles around - count other spots within circle - measure signal intensity in circle_
 
 
 
@@ -51,6 +49,9 @@ Drag _Cluster_Quant.ijm_ into FiJi and hit Run at the bottom of the script edito
 
 
 #### Step 3: Running Analyze_ClusterQuant.py in Python
+
+...
+
 
 
 ## Data output

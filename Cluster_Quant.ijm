@@ -62,11 +62,11 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" ANALYSIS REGIONS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Measurement radius",	 		defaults[8],0,5, "pixels");
-	Dialog.addNumber("Minimum area within circle",	defaults[9],0,5, "%");
+	Dialog.addNumber("Measurement radius",		defaults[8],0,5, "pixels");
+	Dialog.addNumber("Area fraction",			defaults[9],0,5, "%; proportion within analysis region");
 
 	Dialog.setInsets(10,0,0);
-	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");
+	Dialog.addMessage(" MANUAL SELECTION OF REGIONS TO EXCLUDE FROM ANALYSIS");
 	Dialog.setInsets(0, 20, 0);
 	Dialog.addCheckbox("Exclude regions", defaults[11]);
 	Dialog.addCheckbox("Load previously excluded regions", defaults[12]);

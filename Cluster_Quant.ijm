@@ -41,10 +41,10 @@ defaults = import_defaults();
 Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.setInsets(0,0,0);
 	Dialog.addMessage(" INPUT/OUTPUT");
-	Dialog.setInsets(0, 100, 0);
-	Dialog.addMessage("Main data folder should contain one subfolder with data per experimental condition");
+	Dialog.setInsets(0, 0, 0);
+	Dialog.addMessage("Base directory should contain one subfolder with data per experimental condition");
 	Dialog.setInsets(0, 20, 0);
-	Dialog.addDirectory("Main folder", defaults[0]);
+	Dialog.addDirectory("Base directory", defaults[0]);
 	Dialog.addString("Experiment name", defaults[1], 12);
 	Dialog.addString("Image identifier", defaults[2], 12);
 	Dialog.setInsets(-35, 255, 0);
@@ -57,13 +57,13 @@ Dialog.createNonBlocking("ClusterQuant settings");
 	Dialog.addToSameRow();	Dialog.addString("Name", defaults[4], 12);
 	Dialog.addNumber("Correlation channel",	defaults[5],0,3, "correlate clustering with"); // former: Microtubule channel
 	Dialog.addToSameRow();	Dialog.addString("Name",defaults[6],12);
-	Dialog.addNumber("DNA channel",			defaults[7],0,3, "0 to skip; negative value for manual"); // former: DNA channel
+	Dialog.addNumber("Outline (DNA) channel",			defaults[7],0,3, "0 to skip; negative value for manual"); // former: DNA channel
 
 	Dialog.setInsets(10,0,0);
-	Dialog.addMessage(" SLIDING WINDOWS");
+	Dialog.addMessage(" ANALYSIS REGIONS");
 	Dialog.setInsets(0,0,0);
-	Dialog.addNumber("Measurement radius",	 	defaults[8],0,5, "pixels");
-	Dialog.addNumber("Minimum area fraction",	defaults[9],0,5, "%");
+	Dialog.addNumber("Measurement radius",	 		defaults[8],0,5, "pixels");
+	Dialog.addNumber("Minimum area within circle",	defaults[9],0,5, "%");
 
 	Dialog.setInsets(10,0,0);
 	Dialog.addMessage(" MANUALLY SELECT REGIONS TO EXCLUDE FROM ANALYSIS?");

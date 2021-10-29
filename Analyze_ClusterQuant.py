@@ -21,19 +21,17 @@ from tkinter import filedialog as fd
 
 starttime = datetime.now()
 
-
+# these can be turned on or off without affecting downstream functionality
 makeLineplot    = True # create a correlation graph between spots and intensities
 makeViolinplots = False # make a violinplot for each cell showing intensity by spot count
-makePrismOutput = True # output data that can easily be copied to Prism
 spotBasedPrism  = False # make additional prism files for spot based output (slow for large datasets)
 
 
+# don't touch these unless you know what you're doing
 readData        = True # reads data from file; set to False to save time when re-analyzing previous dataset
 makeHisto       = True # create histogram of spot data; required for downstream data
 exportStats     = True # output CSVs for further processing
-
-
-
+makePrismOutput = True # output data that can easily be copied to Prism
 
 
 
@@ -265,7 +263,7 @@ if makeHisto:
 
 #%% MAKE COORELATION GRAPHS
     
-if makeLineplot:
+if makeLineplot or makeViolinplots:
     print (f'making correlation for all {Cond}')
     
     # make plot for all conditions in 1 figure

@@ -1,0 +1,8 @@
+# these should be pretty much standard in most installations of python
+numpy
+pandas
+os
+datetime
+matplotlib
+seaborn
+tkinter

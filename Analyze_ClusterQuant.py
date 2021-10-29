@@ -21,12 +21,21 @@ from tkinter import filedialog as fd
 
 starttime = datetime.now()
 
-readData        = True # reads data from file; set to False to save time when re-analyzing previous
-makeHisto       = True # create histogram of spot data
+
 makeLineplot    = True # create a correlation graph between spots and intensities
-makeViolinplots = True # make a violinplot for each cell showing intensity by spot count
-exportStats     = True # output CSVs for further processing
+makeViolinplots = False # make a violinplot for each cell showing intensity by spot count
 makePrismOutput = True # output data that can easily be copied to Prism
+spotBasedPrism  = False # make additional prism files for spot based output (slow for large datasets)
+
+
+readData        = True # reads data from file; set to False to save time when re-analyzing previous dataset
+makeHisto       = True # create histogram of spot data; required for downstream data
+exportStats     = True # output CSVs for further processing
+
+
+
+
+
 
 cleanup = ['R3D', 'D3D', 'PRJ','dv','tif']
 MaxLength_CondName = 0
@@ -390,7 +399,9 @@ if makePrismOutput:
     
     
     # scatterplots (swarmplots) per spot, using full_df
-    scatter_type = [spotName, spotName + '_noisy', Image]
+    scatter_type = [Image]
+    if spotBasedPrism:
+        scatter_type = scatter_type + [spotName, spotName + '_noisy']
   
     for n, prism_type in enumerate(scatter_type):
         prism_name = f'Scatterplot_per_{prism_type}'

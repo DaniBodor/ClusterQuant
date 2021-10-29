@@ -50,11 +50,24 @@ Drag _Cluster_Quant.ijm_ into FiJi and hit Run at the bottom of the script edito
 
 #### Step 3: Running Analyze_ClusterQuant.py in Python
 
-...
-
+At the end of step 2 a csv file is created, which forms the input data for the python code. This file is named _\_PythonInput\_[datetime]\_Radius[XX].csv_.  
+Open _Analyze_ClusterQuant.py_ in a python console (Anaconda Spyder works well).  
+Run the code (F5 in Spyder) and choose the newly created PythonInput file mentioned above.
+See below for some optional data output types
 
 
 ## Data output
+_add DEFAULTS OUTPUTS_
+_add EXAMPLE IMAGES OF WHAT OUPUT LOOKS LIKE_
+
+At the top of the code a few optional output types that can be turned on or off in addition to the standard ones.
+- makeLineplot: An XY graph is created, which shows the correlation between spot number of intensity of secondary signal (single graph with one line per condition).
+- makeViolinplots (slow for large datasets): Violinplots are created showing the correlation for individual images (one graph per input image). This is slow for large datasets.
+- spotBasedPrism (VERY slow for large datasets): Additional files to create scatterplots for Prism with one point per spot for every spot of every image in the dataset
+
+_add EXAMPLE IMAGES OF THESE AS WELL_
+
+
 
 
 

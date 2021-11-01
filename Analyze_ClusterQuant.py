@@ -22,9 +22,9 @@ from tkinter import filedialog as fd
 starttime = datetime.now()
 
 # these can be turned on or off without affecting downstream functionality
-makeLineplot    = True # create a correlation graph between spots and intensities
-makeViolinplots = False # make a violinplot for each cell showing intensity by spot count
-spotBasedPrism  = False # make additional prism files for spot based output (slow for large datasets)
+makeLineplot     = True # create a correlation graph between spots and intensities
+XY_per_Image     = False # make a prism file with one line per image
+Scatter_Per_Spot = False # make additional prism files for spot based output (slow for large datasets)
 
 
 # don't touch these unless you know what you're doing
@@ -46,6 +46,8 @@ Cond = 'Condition'
 Image = 'Cell'
 Freq = 'Frequency'
 Count = 'Count'
+
+showPlotsInConsole = False
 
 
 #%% MINOR FUNCTIONS
@@ -256,6 +258,8 @@ if makeHisto:
     # save plot
     figurePath = os.path.join(outputDir, 'Histogram.png')
     plt.savefig(figurePath, dpi=600)
+    if showPlotsInConsole:
+        plt.show()
     plt.clf()
         
         
@@ -263,7 +267,7 @@ if makeHisto:
 
 #%% MAKE COORELATION GRAPHS
     
-if makeLineplot or makeViolinplots:
+if makeLineplot or XY_per_Image:
     print (f'making correlation for all {Cond}')
     
     # make plot for all conditions in 1 figure
@@ -279,79 +283,86 @@ if makeLineplot or makeViolinplots:
     plt.legend(loc = 2, prop={'size': 12})
     plt.grid(lw = 0.5)
     
-    figurePath =    os.path.join(outputDir, 'All_Correlations.png')
+    figurePath =    os.path.join(outputDir, f'PrismPreview_XY_per_{Cond}.png')
     plt.savefig(figurePath, dpi=600)
+    if showPlotsInConsole:
+        plt.show()
     plt.clf()
     
-    # figure output directories
-    violinFigDir = os.path.abspath(os.path.join(outputDir, 'ViolinFigs'))
-    if not os.path.exists(violinFigDir):
-        os.mkdir(violinFigDir)
-    
-    condLineFigDir = os.path.abspath(os.path.join(outputDir, Cond))
-    if not os.path.exists(condLineFigDir):
-        os.mkdir(condLineFigDir)
-    
-    max_spots = full_df[spotName].max() #for formatting
-    for i, currcond in enumerate(full_df[Cond].unique()):
-        print (f'making correlation diagram for {currcond}')
-        
-        # generate and save correlation df per condition
-        cond_df = corr_df[corr_df[Cond] == currcond]
-        condname = currcond
-        if MaxLength_CondName and len(condname) > MaxLength_CondName:
-            condname = condname[:MaxLength_CondName-3] + '...'
-        
-        # create line of all data per condition
-        sns.lineplot(x = spotName, y = yAxisName, data = cond_df, color = 'r')
-        
-        # format axes
-        plt.title(condname)
-        plt.xlim(x_limits)
-        plt.xticks(range(max_spots+1))
-        plt.ylim(y_limits)
-        plt.grid(lw = 0.5)
-#        plt.show()
-        
-        # save data and line plot
-        figurePath =    os.path.join(condLineFigDir, condname  + '_Correlation.png')
-        plt.savefig(figurePath, dpi=600)
-        plt.clf()
+    if XY_per_Image:
 
-        if makeViolinplots:
-        # create violin of data per cell
-            total = len(full_df[full_df[Cond] == currcond][Image].unique())
-            print(f'generating violinplots for {currcond} ({total} total): ', end='')
-            for i,curr_image in enumerate(cond_df[Image].unique()):
-                if curr_image is not 'fake':
-                    print (i+1,end=',')
-                    violin_df = cond_df[cond_df[Image] == curr_image]
+        # figure output directories
+        condLineFigDir = os.path.abspath(os.path.join(outputDir, Cond))
+        if not os.path.exists(condLineFigDir):
+            os.mkdir(condLineFigDir)
+        violinFigDir = os.path.abspath(os.path.join(outputDir, 'ViolinFigs'))
+        if not os.path.exists(violinFigDir):
+            os.mkdir(violinFigDir)
+
         
-                    # add missing x values
-                    for N in range(max_spots+1):
-                        if not N in violin_df[spotName].unique():
-                            newrow = {Cond:condname, Image:curr_image, spotName:N, yAxisName:np.nan}
-                            violin_df = violin_df.append(newrow, ignore_index=True)
-                    
-                    
-                    
-                    # plot & formatting
-                    sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
-                    sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
-                                   scale = "width", color = 'lightskyblue', lw = 1)
-                    
-                    plt.title(condname + '\n' + curr_image)
-                    plt.xlim(x_limits)
-                    plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max() )
-                    plt.grid(axis='y', lw = 0.5)
-                    
-                    # save figure and data
-                    violin_name = condname + "_" + curr_image
-                    figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
-                    plt.savefig(figurePath, dpi=600)
-        #            plt.show()
-                    plt.clf()
-            print('')
+        max_spots = full_df[spotName].max() #for formatting
+        for i, currcond in enumerate(full_df[Cond].unique()):
+            print (f'making correlation diagram for {currcond}')
+            
+            # generate and save correlation df per condition
+            cond_df = corr_df[corr_df[Cond] == currcond]
+            condname = currcond
+            if MaxLength_CondName and len(condname) > MaxLength_CondName:
+                condname = condname[:MaxLength_CondName-3] + '...'
+            
+            # create line of all data per condition
+            sns.lineplot(x = spotName, y = yAxisName, data = cond_df, color = 'r')
+            
+            # format axes
+            plt.title(condname)
+            plt.xlim(x_limits)
+            plt.xticks(range(max_spots+1))
+            plt.ylim(y_limits)
+            plt.grid(lw = 0.5)
+
+            
+            # save data and line plot
+            figurePath =    os.path.join(condLineFigDir, condname  + '_Correlation.png')
+            plt.savefig(figurePath, dpi=600)
+            if showPlotsInConsole:
+                plt.show()
+            plt.clf()
+
+
+        # create violin of data per cell
+        total = len(full_df[full_df[Cond] == currcond][Image].unique())
+        print(f'generating violinplots for {currcond} ({total} total): ', end='')
+        for i,curr_image in enumerate(cond_df[Image].unique()):
+            if curr_image is not 'fake':
+                print (i+1,end=',')
+                violin_df = cond_df[cond_df[Image] == curr_image]
+    
+                # add missing x values
+                for N in range(max_spots+1):
+                    if not N in violin_df[spotName].unique():
+                        newrow = {Cond:condname, Image:curr_image, spotName:N, yAxisName:np.nan}
+                        violin_df = violin_df.append(newrow, ignore_index=True)
+                
+                
+                
+                # plot & formatting
+                sns.lineplot  (x = spotName, y = yAxisName, data = violin_df, color = 'r')
+                sns.violinplot(x = spotName, y = yAxisName, data = violin_df, 
+                               scale = "width", color = 'lightskyblue', lw = 1)
+                
+                plt.title(condname + '\n' + curr_image)
+                plt.xlim(x_limits)
+                plt.ylim(full_df[yAxisName].min(), full_df[yAxisName].max() )
+                plt.grid(axis='y', lw = 0.5)
+                
+                # save figure and data
+                violin_name = condname + "_" + curr_image
+                figurePath =        os.path.join(violinFigDir, violin_name  + '_violin.png')
+                plt.savefig(figurePath, dpi=600)
+                if showPlotsInConsole:
+                    plt.show()
+                plt.clf()
+        print('')
     
 #%%
 if exportStats:
@@ -398,20 +409,20 @@ if makePrismOutput:
     
     # scatterplots (swarmplots) per spot, using full_df
     scatter_type = [Image]
-    if spotBasedPrism:
+    if Scatter_Per_Spot:
         scatter_type = scatter_type + [spotName, spotName + '_noisy']
   
-    for n, prism_type in enumerate(scatter_type):
+    for prism_type in scatter_type:
         prism_name = f'Scatterplot_per_{prism_type}'
         
         headers = [Image, *full_df[Cond].unique()]
         max_noise = 0.2
 
         scatter_input = full_df.copy()
-        if 'nois' in prism_type:
-            scatter_input[spotName] += np.random.uniform(low = -max_noise, high = max_noise, size = len(scatter_input))             
-        elif n == 2:
+        if prism_type == Image:
             scatter_input = pd.DataFrame({spotName : full_df.groupby([Cond,Image])[spotName].mean()}).reset_index()
+        elif 'nois' in prism_type:
+            scatter_input[spotName] += np.random.uniform(low = -max_noise, high = max_noise, size = len(scatter_input))             
         
         data = [list(scatter_input[Image])]
         
@@ -434,8 +445,10 @@ if makePrismOutput:
         y_min = plt.ylim()[0]
         plt.ylim(bottom = min(y_min,0))
         # save plot
-        figurePath = os.path.join(outputDir, prism_name + '.png')
+        figurePath = os.path.join(outputDir, 'PrismPreview_' + prism_name + '.png')
         plt.savefig(figurePath, dpi=600)
+        if showPlotsInConsole:
+            plt.show()
         plt.clf()
     
     
@@ -460,26 +473,27 @@ if makePrismOutput:
     
     
     # Line graph per image, using stats3
-    prism_type = f'XY_per_{Image}'
-    Conds = [cond for cond in stats_3[Cond].unique()]
-    IMs =   [im for im in stats_3[Image].unique()]
-
-    headers = ['',spotName]
-    data = [list(stats_3[Image]), list(stats_3[spotName]) ]
-    
-    for c in Conds:
-        for im in stats_3[stats_3[Cond] == c][Image].unique():
-            ims = [f'{c} - {im}']
-            headers = headers + [ele for ele in ims for i in range(3)]
+    if XY_per_Image:
+        prism_type = f'XY_per_{Image}'
+        Conds = [cond for cond in stats_3[Cond].unique()]
+        IMs =   [im for im in stats_3[Image].unique()]
         
-            mean =   [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Mean']) ]
-            stdev =  [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['StDev']) ]
-            counts = [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Count']) ]
-            data.append(mean)
-            data.append(stdev)
-            data.append(counts)
-    
-    prism_output(prism_type, headers, data)
+        headers = ['',spotName]
+        data = [list(stats_3[Image]), list(stats_3[spotName]) ]
+        
+        for c in Conds:
+            for im in stats_3[stats_3[Cond] == c][Image].unique():
+                ims = [f'{c} - {im}']
+                headers = headers + [ele for ele in ims for i in range(3)]
+            
+                mean =   [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Mean']) ]
+                stdev =  [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['StDev']) ]
+                counts = [x if (stats_3[Cond][i] == c and stats_3[Image][i] == im) else '' for i, x in enumerate(stats_3['Count']) ]
+                data.append(mean)
+                data.append(stdev)
+                data.append(counts)
+        
+        prism_output(prism_type, headers, data)
 
 print('')
 #print('(if you got a FutureWarning, try updating pandas)')

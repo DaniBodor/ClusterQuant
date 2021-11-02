@@ -57,7 +57,7 @@ See below for some optional data output types
 
 
 ## Data output
-_add DEFAULTS OUTPUTS_
+_add DEFAULT OUTPUTS_
 _add EXAMPLE IMAGES OF WHAT OUPUT LOOKS LIKE_
 
 At the top of the code a few optional output types that can be turned on or off in addition to the standard ones.
